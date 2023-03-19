@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "tdp"
+version = "0.1.0"
+description = ""
+authors = ["Tristan Kernan <tristanmkernan@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pygame = "^2.1.2"
+pytmx = "^3.31"
+
+[tool.poetry.dev-dependencies]
+black = "^23.1.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ipdb = "^0.13.13"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
