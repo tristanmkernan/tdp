@@ -58,6 +58,11 @@ class Renderable:
     image: Surface
     order: RenderableOrder
 
+    original_image: Surface = dataclasses.field(init=False)
+
+    def __post_init__(self):
+        self.original_image = self.image
+
 
 @dataclasses.dataclass
 class Lifetime:
@@ -67,6 +72,7 @@ class Lifetime:
 @dataclasses.dataclass
 class BoundingBox:
     rect: Rect
+    rotation: Vector2 = dataclasses.field(default_factory=Vector2)
 
 
 @dataclasses.dataclass
@@ -85,3 +91,20 @@ class UnitPathing:
 
     def advance(self):
         self.index = min(self.index + 1, len(self.vertices) - 1)
+
+
+class TurretBuildZone:
+    pass
+
+
+@dataclasses.dataclass
+class Firing:
+    elapsed: float = 0.0
+    rate: float = 0.0
+
+    @property
+    def every(self):
+        """
+        How many seconds delay between firing
+        """
+        return 1.0 / self.rate

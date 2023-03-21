@@ -20,19 +20,7 @@ class InputEventKind(enum.IntEnum):
 
 
 class PlayerActionKind(enum.IntEnum):
-    Accelerate = enum.auto()
-    StopAccelerating = enum.auto()
-
-    Decelerate = enum.auto()
-    StopDecelerating = enum.auto()
-
-    RotateLeft = enum.auto()
-    StopRotateLeft = enum.auto()
-
-    RotateRight = enum.auto()
-    StopRotateRight = enum.auto()
-
-    Fire = enum.auto()
+    SelectTurretBuildZone = enum.auto()
 
 
 class RenderableKind(enum.IntEnum):
@@ -47,5 +35,5 @@ class RenderableOrder(enum.IntEnum):
 
 
 class ObjectKind(enum.StrEnum):
-    TurretSpawn = "TurretSpawn"
+    TurretBuildZone = "TurretBuildZone"
     Path = "Path"

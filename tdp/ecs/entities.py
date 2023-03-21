@@ -2,7 +2,7 @@ import logging
 
 import pygame
 
-from pygame import Rect
+from pygame import Rect, Vector2
 
 from tdp.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
@@ -17,7 +17,7 @@ from .components import (
     ScoreTracker,
     UnitPathing,
     Velocity,
-    Spawning,
+    Firing,
     Renderable,
 )
 from .enums import CollidableKind, RenderableKind, RenderableOrder, ScoreEventKind
@@ -57,68 +57,41 @@ def spawn_enemy(world: esper.World, spawn_point: int):
     )
 
 
-def create_player_ship(world: esper.World):
-    player_ship = world.create_entity()
+def create_turret(world: esper.World, build_zone_ent: int):
+    bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
-    world.add_component(player_ship, PlayerShip())
-    world.add_component(player_ship, Position(x=SCREEN_WIDTH / 2, y=SCREEN_HEIGHT / 2))
-    world.add_component(player_ship, Velocity(max=0.25))
-    world.add_component(player_ship, Acceleration())
-    world.add_component(player_ship, Rotation())
-    world.add_component(
-        player_ship,
-        Collidable(
-            kind=CollidableKind.Circle,
-            radius=3,
-        ),
+    image = pygame.image.load("assets/turrets/mach1.png")
+    image_rect = image.get_rect()
+
+    bbox = BoundingBox(rect=Rect(image_rect))
+    bbox.rect.center = bz_bbox.rect.center
+
+    # for now, remove build zone entity, but may want to disable instead
+    world.delete_entity(build_zone_ent)
+
+    return world.create_entity(
+        Firing(rate=1.0 / 500.0),
+        bbox,
+        Renderable(image=image, order=RenderableOrder.Objects),
     )
-    world.add_component(
-        player_ship, BulletAmmo(recharge_rate=1.0 / 500.0, count=3, max=5)
+
+
+def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int):
+    turret_bbox = world.component_for_entity(turret_ent, BoundingBox)
+    enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
+
+    vec = (
+        Vector2(enemy_bbox.rect.center) - Vector2(turret_bbox.rect.center)
+    ).normalize()
+    vec.scale_to_length(0.5)
+
+    return world.create_entity(
+        # TODO bullet params
+        BoundingBox(rect=Rect(turret_bbox.rect.x, turret_bbox.rect.y, 12, 12)),
+        #        Renderable(),
+        Bullet(),
+        Velocity(vec=vec),
     )
-
-    renderables = RenderableCollection(
-        items=[
-            Renderable(RenderableKind.Circle, radius=15, color=(255, 0, 0)),
-            Renderable(
-                RenderableKind.Circle,
-                radius=5,
-                color=(0, 255, 0),
-                offset=PositionOffset(x=10),
-            ),
-        ]
-    )
-    world.add_component(player_ship, renderables)
-
-
-def create_bullet(world: esper.World):
-    player, (
-        player_ship,
-        player_position,
-        player_velocity,
-        bullet_ammo,
-    ) = world.get_components(PlayerShip, Position, Velocity, BulletAmmo)[0]
-
-    if bullet_ammo.empty:
-        return
-
-    # subtract one bullet
-    bullet_ammo.count -= 1
-
-    bullet = world.create_entity()
-
-    offset = get_offset_for_rotation(player_position.rotation, magnitude=0.75)
-
-    velocity = Velocity(x=offset.x, y=offset.y)
-
-    world.add_component(bullet, Position(x=player_position.x, y=player_position.y))
-    world.add_component(bullet, velocity)
-    world.add_component(
-        bullet, Renderable(kind=RenderableKind.Circle, radius=3, color=(0, 0, 0))
-    )
-    world.add_component(bullet, Collidable(radius=3, kind=CollidableKind.Circle))
-    world.add_component(bullet, Bullet())
-
-    return bullet
 
 
 def create_player_input(world: esper.World):
@@ -134,43 +107,3 @@ def track_score_event(world: esper.World, kind: ScoreEventKind):
     score_tracker.recent_events = score_tracker.recent_events[:10]
 
     score_tracker.scores[kind] += 1
-
-
-# TODO could be part of difficulty increase over time
-def increase_spawn_rate(world: esper.World, multiplier: float = 1.25):
-    for _, spawning in world.get_component(Spawning):
-        spawning.rate *= multiplier
-
-
-def set_player_acceleration(
-    world: esper.World, *, forward: bool = True, unset: bool = False
-):
-    _, (_, pos, acc) = world.get_components(PlayerShip, Position, Acceleration)[0]
-
-    if unset:
-        acc.x = acc.y = 0.0
-    else:
-        rotation = pos.rotation
-
-        offset = get_offset_for_rotation(rotation, 0.5 / 1_000)
-
-        acc.x = offset.x * (1 if forward else -1)
-        acc.y = offset.y * (1 if forward else -1)
-
-
-def set_player_rotating_right(world: esper.World, val: bool):
-    _, (_, rot) = world.get_components(PlayerShip, Rotation)[0]
-
-    if val:
-        rot.speed = -1.0 / 500.0
-    else:
-        rot.speed = 0.0
-
-
-def set_player_rotating_left(world: esper.World, val: bool):
-    _, (_, rot) = world.get_components(PlayerShip, Rotation)[0]
-
-    if val:
-        rot.speed = 1.0 / 500.0
-    else:
-        rot.speed = 0.0

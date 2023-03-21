@@ -11,6 +11,7 @@ from .components import (
     Renderable,
     BoundingBox,
     Spawning,
+    TurretBuildZone,
 )
 from .enums import RenderableOrder, ObjectKind
 
@@ -20,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 def load_map(world: esper.World):
-    tiled_map = load_pygame("maps/map1.tmx")
+    # TODO parameterize file
+    tiled_map = load_pygame("assets/maps/map1.tmx")
 
     # base layer
     base_layer = tiled_map.get_layer_by_name("Base")
@@ -50,7 +52,9 @@ def load_map(world: esper.World):
     object_layer = tiled_map.get_layer_by_name("Objects")
 
     ## turret spawns
-    turret_spawns = [obj for obj in object_layer if obj.type == ObjectKind.TurretSpawn]
+    turret_spawns = [
+        obj for obj in object_layer if obj.type == ObjectKind.TurretBuildZone
+    ]
 
     for obj in turret_spawns:
         world.create_entity(
@@ -59,6 +63,7 @@ def load_map(world: esper.World):
                 order=RenderableOrder.Objects,
             ),
             BoundingBox(rect=Rect(obj.x, obj.y, obj.width, obj.height)),
+            TurretBuildZone(),
         )
 
     ## pathing
@@ -85,7 +90,7 @@ def load_map(world: esper.World):
     vertices.append(Vector2(end_bbox.rect.centerx, end_bbox.rect.centery))
 
     world.create_entity(
-        Spawning(rate=1.0 / 1_000.0),
+        Spawning(rate=1.0 / 5_000.0),
         BoundingBox(rect=Rect(start_obj.x, start_obj.y, 0, 0)),
         PathGraph(vertices=vertices),
     )
