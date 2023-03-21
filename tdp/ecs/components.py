@@ -2,7 +2,7 @@ import dataclasses
 
 from pygame import Rect, Vector2, Surface
 
-from .enums import RenderableOrder, ScoreEventKind
+from .enums import RenderableOrder, ScoreEventKind, TurretState
 
 
 class Enemy:
@@ -72,7 +72,7 @@ class Lifetime:
 @dataclasses.dataclass
 class BoundingBox:
     rect: Rect
-    rotation: Vector2 = dataclasses.field(default_factory=Vector2)
+    rotation: Vector2 = dataclasses.field(default_factory=lambda: Vector2(1, 0))
 
 
 @dataclasses.dataclass
@@ -98,13 +98,14 @@ class TurretBuildZone:
 
 
 @dataclasses.dataclass
-class Firing:
+class TurretMachine:
+    state: TurretState
+
+    firing_cooldown: float = 1_000.0
     elapsed: float = 0.0
-    rate: float = 0.0
+    idle_rotation_speed: float = 0.05
+    range: float = 500.0
 
     @property
-    def every(self):
-        """
-        How many seconds delay between firing
-        """
-        return 1.0 / self.rate
+    def can_fire(self):
+        return self.elapsed >= self.firing_cooldown

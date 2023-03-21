@@ -60,7 +60,7 @@ def play_game():
             screen=screen,
             show_fps=True,
             player_input_events=input_events,
-            debug=True,
+            debug=False,
         )
 
     pygame.quit()

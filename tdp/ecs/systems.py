@@ -11,9 +11,9 @@ from .components import (
     BoundingBox,
     Bullet,
     Enemy,
-    Firing,
     Lifetime,
     PlayerKeyInput,
+    TurretMachine,
     Velocity,
     Spawning,
     Renderable,
@@ -28,8 +28,13 @@ from .entities import (
     spawn_enemy,
     track_score_event,
 )
-from .enums import RenderableKind, ScoreEventKind, InputEventKind, PlayerActionKind
-from .util import get_player_action_for_click
+from .enums import (
+    ScoreEventKind,
+    InputEventKind,
+    PlayerActionKind,
+    TurretState,
+)
+from .util import get_player_action_for_click, get_closest_enemy
 from . import esper
 
 logger = logging.getLogger(__name__)
@@ -45,7 +50,7 @@ def add_systems(world: esper.World):
     world.add_processor(LifetimeProcessor())
     world.add_processor(PathingProcessor())
     world.add_processor(DespawningProcessor())
-    world.add_processor(FiringProcessor())
+    world.add_processor(TurretStateProcessor())
 
     world.add_processor(RenderingProcessor())
 
@@ -268,44 +273,66 @@ class RotationProcessor(esper.Processor):
             bbox.rect = updated_rect
 
 
-# TODO rename turret firing processor
-class FiringProcessor(esper.Processor):
+class TurretStateProcessor(esper.Processor):
     def process(self, *args, delta, **kwargs):
-        # TODO clean this up
-        # could be more efficient than N^2
-        for ent, (firing, bbox) in self.world.get_components(Firing, BoundingBox):
-            firing.elapsed += delta
+        for turret_ent, (turret_machine, turret_bbox) in self.world.get_components(
+            TurretMachine, BoundingBox
+        ):
+            turret_machine.elapsed += delta
 
-            ## find closest enemy
-            closest_enemy = None
-            closest_enemy_distance = float("inf")
-            closest_enemy_bbox = None
+            closest_enemy = get_closest_enemy(
+                self.world, turret_bbox, range=turret_machine.range
+            )
 
-            for enemy_ent, (
-                enemy,
-                other_bbox,
-            ) in self.world.get_components(Enemy, BoundingBox):
-                distance_to_enemy = Vector2(other_bbox.rect.center).distance_to(
-                    Vector2(bbox.rect.center)
-                )
+            match turret_machine.state:
+                case TurretState.Idle:
+                    # if enemy, transition to tracking
+                    if closest_enemy:
+                        turret_machine.state = TurretState.Tracking
+                    else:
+                        # slowly rotate
+                        turret_bbox.rotation = turret_bbox.rotation.rotate(
+                            turret_machine.idle_rotation_speed * delta
+                        )
 
-                if distance_to_enemy < closest_enemy_distance:
-                    closest_enemy_distance = distance_to_enemy
-                    closest_enemy = enemy_ent
-                    closest_enemy_bbox = other_bbox
+                case TurretState.Firing:
+                    # if no enemy, transition to idle
+                    if not closest_enemy:
+                        turret_machine.state = TurretState.Idle
+                    else:
+                        # rotate towards enemy
+                        enemy_bbox = self.world.component_for_entity(
+                            closest_enemy, BoundingBox
+                        )
 
-            if closest_enemy:
-                # rotate towards enemy
-                bbox.rotation = Vector2(closest_enemy_bbox.rect.center) - Vector2(
-                    bbox.rect.center
-                )
+                        turret_bbox.rotation = Vector2(
+                            enemy_bbox.rect.center
+                        ) - Vector2(turret_bbox.rect.center)
 
-                if firing.elapsed > firing.every:
-                    # spawn bullet
-                    bullet = create_bullet(self.world, ent, closest_enemy)
+                        # spawn bullet
+                        bullet = create_bullet(self.world, turret_ent, closest_enemy)
 
-                    # TODO animate the turret
+                        logger.info("Spawned bullet id=%d", bullet)
 
-                    logger.info("Spawned bullet id=%d", bullet)
+                        turret_machine.elapsed = 0.0
 
-                    firing.elapsed = 0.0
+                        # transition to tracking
+                        turret_machine.state = TurretState.Tracking
+
+                case TurretState.Tracking:
+                    # if no enemy, transition to idle
+                    if not closest_enemy:
+                        turret_machine.state = TurretState.Idle
+                    else:
+                        # rotate towards enemy
+                        enemy_bbox = self.world.component_for_entity(
+                            closest_enemy, BoundingBox
+                        )
+
+                        turret_bbox.rotation = Vector2(
+                            enemy_bbox.rect.center
+                        ) - Vector2(turret_bbox.rect.center)
+
+                        # if possible, transition to firing
+                        if turret_machine.can_fire:
+                            turret_machine.state = TurretState.Firing

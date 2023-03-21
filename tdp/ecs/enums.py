@@ -1,11 +1,6 @@
 import enum
 
 
-class CollidableKind(enum.IntEnum):
-    Circle = enum.auto()
-    Triangle = enum.auto()
-
-
 class ScoreEventKind(enum.IntEnum):
     EnemyKill = enum.auto()
     EnemyDespawn = enum.auto()
@@ -23,11 +18,6 @@ class PlayerActionKind(enum.IntEnum):
     SelectTurretBuildZone = enum.auto()
 
 
-class RenderableKind(enum.IntEnum):
-    Circle = enum.auto()
-    Triangle = enum.auto()
-
-
 class RenderableOrder(enum.IntEnum):
     Base = enum.auto()
     Environment = enum.auto()
@@ -37,3 +27,9 @@ class RenderableOrder(enum.IntEnum):
 class ObjectKind(enum.StrEnum):
     TurretBuildZone = "TurretBuildZone"
     Path = "Path"
+
+
+class TurretState(enum.IntEnum):
+    Idle = enum.auto()
+    Tracking = enum.auto()
+    Firing = enum.auto()

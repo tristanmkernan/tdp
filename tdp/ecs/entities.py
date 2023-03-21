@@ -4,23 +4,25 @@ import pygame
 
 from pygame import Rect, Vector2
 
-from tdp.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
 from .components import (
     BoundingBox,
     Bullet,
     Despawnable,
-    Despawning,
     Enemy,
     PathGraph,
     PlayerKeyInput,
     ScoreTracker,
+    TurretMachine,
     UnitPathing,
     Velocity,
-    Firing,
     Renderable,
 )
-from .enums import CollidableKind, RenderableKind, RenderableOrder, ScoreEventKind
+from .enums import (
+    RenderableOrder,
+    ScoreEventKind,
+    TurretState,
+)
 
 from . import esper
 
@@ -70,7 +72,7 @@ def create_turret(world: esper.World, build_zone_ent: int):
     world.delete_entity(build_zone_ent)
 
     return world.create_entity(
-        Firing(rate=1.0 / 500.0),
+        TurretMachine(state=TurretState.Idle),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
     )
