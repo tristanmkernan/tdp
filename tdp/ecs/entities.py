@@ -4,7 +4,7 @@ import pygame
 
 from pygame import Rect, Vector2
 
-
+from .assets import Assets
 from .components import (
     BoundingBox,
     Bullet,
@@ -35,11 +35,11 @@ def create_scoreboard(world: esper.World):
     world.add_component(scoreboard, ScoreTracker())
 
 
-def spawn_enemy(world: esper.World, spawn_point: int):
+def spawn_enemy(world: esper.World, spawn_point: int, *, assets: Assets):
     spawn_bbox = world.component_for_entity(spawn_point, BoundingBox)
     spawn_path_graph = world.component_for_entity(spawn_point, PathGraph)
 
-    image = pygame.image.load("assets/enemies/grunt.png")
+    image = assets.grunt
     image_rect = image.get_rect()
 
     return world.create_entity(
@@ -59,10 +59,10 @@ def spawn_enemy(world: esper.World, spawn_point: int):
     )
 
 
-def create_turret(world: esper.World, build_zone_ent: int):
+def create_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
-    image = pygame.image.load("assets/turrets/mach1.png")
+    image = assets.turret
     image_rect = image.get_rect()
 
     bbox = BoundingBox(rect=Rect(image_rect))

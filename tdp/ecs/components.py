@@ -102,10 +102,15 @@ class TurretMachine:
     state: TurretState
 
     firing_cooldown: float = 1_000.0
+    firing_animation_duration: float = 250.0
     elapsed: float = 0.0
-    idle_rotation_speed: float = 0.05
+    idle_rotation_speed: float = 0.025
     range: float = 500.0
 
     @property
     def can_fire(self):
         return self.elapsed >= self.firing_cooldown
+
+    @property
+    def finished_firing_animation(self):
+        return self.elapsed >= self.firing_animation_duration

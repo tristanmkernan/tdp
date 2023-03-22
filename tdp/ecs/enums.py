@@ -33,3 +33,4 @@ class TurretState(enum.IntEnum):
     Idle = enum.auto()
     Tracking = enum.auto()
     Firing = enum.auto()
+    FiringAnimation = enum.auto()

@@ -1,6 +1,7 @@
 import pygame
 
 from tdp.constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from tdp.ecs.assets import load_assets
 from tdp.ecs.enums import InputEventKind
 from tdp.ecs.world import build_world
 
@@ -20,6 +21,7 @@ def play_game():
     # setup world
     #####
 
+    assets = load_assets()
     world = build_world()
 
     #####
@@ -58,6 +60,7 @@ def play_game():
             delta=ms,
             clock=clock,
             screen=screen,
+            assets=assets,
             show_fps=True,
             player_input_events=input_events,
             debug=False,

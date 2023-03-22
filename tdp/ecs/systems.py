@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 def add_systems(world: esper.World):
+    world.add_processor(TurretStateProcessor())
     world.add_processor(MovementProcessor())
     world.add_processor(RotationProcessor())
     world.add_processor(SpawningProcessor())
@@ -50,7 +51,6 @@ def add_systems(world: esper.World):
     world.add_processor(LifetimeProcessor())
     world.add_processor(PathingProcessor())
     world.add_processor(DespawningProcessor())
-    world.add_processor(TurretStateProcessor())
 
     world.add_processor(RenderingProcessor())
 
@@ -69,12 +69,12 @@ class MovementProcessor(esper.Processor):
 
 
 class SpawningProcessor(esper.Processor):
-    def process(self, *args, delta, **kwargs):
+    def process(self, *args, delta, assets, **kwargs):
         for ent, spawning in self.world.get_component(Spawning):
             spawning.elapsed += delta
 
             if spawning.elapsed > spawning.every:
-                enemy = spawn_enemy(self.world, ent)
+                enemy = spawn_enemy(self.world, ent, assets=assets)
 
                 logger.info("Spawned new enemy id=%d", enemy)
 
@@ -170,7 +170,7 @@ class BulletProcessor(esper.Processor):
 
 
 class PlayerInputProcessor(esper.Processor):
-    def process(self, *args, **kwargs):
+    def process(self, *args, assets, **kwargs):
         # TODO consider sorting by keydown, then keyup,
         #   in case we receive a sequence "out of order" like
         #   [W key up, W key down]
@@ -196,7 +196,7 @@ class PlayerInputProcessor(esper.Processor):
             match action:
                 case {"kind": PlayerActionKind.SelectTurretBuildZone, "ent": ent}:
                     # for now, let's just build a turret here
-                    create_turret(self.world, ent)
+                    create_turret(self.world, ent, assets=assets)
 
 
 class ScoreTimeTrackerProcessor(esper.Processor):
@@ -274,10 +274,12 @@ class RotationProcessor(esper.Processor):
 
 
 class TurretStateProcessor(esper.Processor):
-    def process(self, *args, delta, **kwargs):
-        for turret_ent, (turret_machine, turret_bbox) in self.world.get_components(
-            TurretMachine, BoundingBox
-        ):
+    def process(self, *args, delta, assets, **kwargs):
+        for turret_ent, (
+            turret_machine,
+            turret_bbox,
+            renderable,
+        ) in self.world.get_components(TurretMachine, BoundingBox, Renderable):
             turret_machine.elapsed += delta
 
             closest_enemy = get_closest_enemy(
@@ -294,6 +296,10 @@ class TurretStateProcessor(esper.Processor):
                         turret_bbox.rotation = turret_bbox.rotation.rotate(
                             turret_machine.idle_rotation_speed * delta
                         )
+
+                case TurretState.FiringAnimation:
+                    if turret_machine.finished_firing_animation:
+                        turret_machine.state = TurretState.Tracking
 
                 case TurretState.Firing:
                     # if no enemy, transition to idle
@@ -316,8 +322,8 @@ class TurretStateProcessor(esper.Processor):
 
                         turret_machine.elapsed = 0.0
 
-                        # transition to tracking
-                        turret_machine.state = TurretState.Tracking
+                        # transition to animating
+                        turret_machine.state = TurretState.FiringAnimation
 
                 case TurretState.Tracking:
                     # if no enemy, transition to idle
@@ -336,3 +342,10 @@ class TurretStateProcessor(esper.Processor):
                         # if possible, transition to firing
                         if turret_machine.can_fire:
                             turret_machine.state = TurretState.Firing
+
+            # sync state and sprite
+            match turret_machine.state:
+                case TurretState.FiringAnimation:
+                    renderable.image = renderable.original_image = assets.turret__firing
+                case _:
+                    renderable.image = renderable.original_image = assets.turret
