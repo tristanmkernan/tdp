@@ -35,11 +35,18 @@ def create_scoreboard(world: esper.World):
     world.add_component(scoreboard, ScoreTracker())
 
 
-def spawn_enemy(world: esper.World, spawn_point: int, *, assets: Assets):
+def spawn_tank(world: esper.World, spawn_point: int, *, assets: Assets):
+    return spawn_enemy(world, spawn_point, assets.tank)
+
+
+def spawn_grunt(world: esper.World, spawn_point: int, *, assets: Assets):
+    return spawn_enemy(world, spawn_point, assets.grunt)
+
+
+def spawn_enemy(world: esper.World, spawn_point: int, image: pygame.Surface):
     spawn_bbox = world.component_for_entity(spawn_point, BoundingBox)
     spawn_path_graph = world.component_for_entity(spawn_point, PathGraph)
 
-    image = assets.grunt
     image_rect = image.get_rect()
 
     return world.create_entity(

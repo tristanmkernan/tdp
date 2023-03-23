@@ -1,4 +1,5 @@
 import logging
+import random
 
 import pygame
 import pygame.constants
@@ -26,6 +27,8 @@ from .entities import (
     create_turret,
     create_bullet,
     spawn_enemy,
+    spawn_grunt,
+    spawn_tank,
     track_score_event,
 )
 from .enums import (
@@ -74,7 +77,10 @@ class SpawningProcessor(esper.Processor):
             spawning.elapsed += delta
 
             if spawning.elapsed > spawning.every:
-                enemy = spawn_enemy(self.world, ent, assets=assets)
+                if random.randint(0, 1):
+                    enemy = spawn_grunt(self.world, ent, assets=assets)
+                else:
+                    enemy = spawn_tank(self.world, ent, assets=assets)
 
                 logger.info("Spawned new enemy id=%d", enemy)
 
