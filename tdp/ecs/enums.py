@@ -39,3 +39,9 @@ class TurretState(enum.IntEnum):
 class EnemyKind(enum.IntEnum):
     Grunt = enum.auto()
     Tank = enum.auto()
+
+
+class TurretKind(enum.IntEnum):
+    Bullet = enum.auto()
+    Flame = enum.auto()
+    Rocket = enum.auto()

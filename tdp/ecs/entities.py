@@ -1,4 +1,5 @@
 import logging
+import random
 
 import pygame
 
@@ -10,6 +11,7 @@ from .assets import Assets
 from .components import (
     BoundingBox,
     Bullet,
+    Flame,
     Despawnable,
     Enemy,
     PathGraph,
@@ -24,6 +26,7 @@ from .components import (
 from .enums import (
     RenderableOrder,
     ScoreEventKind,
+    TurretKind,
     TurretState,
 )
 
@@ -80,10 +83,10 @@ def kill_enemy(world: esper.World, enemy_ent: int):
     player_resources.money += enemy.bounty
 
 
-def create_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
+def create_flame_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
-    image = assets.turret
+    image = assets.flame_turret
     image_rect = image.get_rect()
 
     bbox = BoundingBox(rect=Rect(image_rect))
@@ -93,9 +96,88 @@ def create_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
     world.delete_entity(build_zone_ent)
 
     return world.create_entity(
-        TurretMachine(state=TurretState.Idle),
+        TurretMachine(
+            state=TurretState.Idle,
+            kind=TurretKind.Flame,
+            firing_cooldown=5.0,
+            firing_animation_duration=0,
+            range=250,
+        ),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
+    )
+
+
+def create_bullet_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
+    bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
+
+    image = assets.bullet_turret
+    image_rect = image.get_rect()
+
+    bbox = BoundingBox(rect=Rect(image_rect))
+    bbox.rect.center = bz_bbox.rect.center
+
+    # for now, remove build zone entity, but may want to disable instead
+    world.delete_entity(build_zone_ent)
+
+    return world.create_entity(
+        TurretMachine(state=TurretState.Idle, kind=TurretKind.Bullet),
+        bbox,
+        Renderable(image=image, order=RenderableOrder.Objects),
+    )
+
+
+def fire_turret(
+    world: esper.World,
+    turret_ent: int,
+    turret_machine: TurretMachine,
+    enemy_ent: int,
+    *,
+    assets: Assets,
+):
+    match turret_machine.kind:
+        case TurretKind.Bullet:
+            create_bullet(world, turret_ent, enemy_ent)
+
+        case TurretKind.Flame:
+            create_flame(world, turret_ent, enemy_ent, assets=assets)
+
+
+def create_flame(
+    world: esper.World, turret_ent: int, enemy_ent: int, *, assets: Assets
+):
+    turret_bbox = world.component_for_entity(turret_ent, BoundingBox)
+    enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
+
+    image = assets.flame_particle
+    image_rect = image.get_rect()
+
+    vec = (
+        Vector2(enemy_bbox.rect.center) - Vector2(turret_bbox.rect.center)
+    ).normalize()
+
+    # introduce random rotation, flame turret creates "cone" of flame
+    # +15, -15 deg range (30 deg total cone)
+    vec = vec.rotate(random.uniform(-15.0, 15.0))
+
+    vec.scale_to_length(0.35)
+
+    # flame should spawn outside turret, not inside
+    # let's adjust position along target vector
+    turret_pos_offset = vec.copy()
+    turret_pos_offset.scale_to_length(64)
+
+    flame_center = Vector2(turret_bbox.rect.center) + turret_pos_offset
+
+    flame_rect = Rect((0, 0), image_rect.size)
+    flame_rect.center = (flame_center.x, flame_center.y)
+
+    return world.create_entity(
+        # TODO flames should spawn from outside turret, not inside
+        BoundingBox(rect=flame_rect, rotation=vec),
+        Flame(),
+        Renderable(image=image, order=RenderableOrder.Objects),
+        Velocity(vec=vec),
     )
 
 

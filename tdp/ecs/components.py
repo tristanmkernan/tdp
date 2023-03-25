@@ -2,7 +2,7 @@ import dataclasses
 
 from pygame import Rect, Vector2, Surface
 
-from .enums import RenderableOrder, ScoreEventKind, TurretState, EnemyKind
+from .enums import RenderableOrder, ScoreEventKind, TurretState, EnemyKind, TurretKind
 
 
 @dataclasses.dataclass
@@ -76,6 +76,11 @@ class Bullet:
 
 
 @dataclasses.dataclass
+class Flame:
+    pass
+
+
+@dataclasses.dataclass
 class ScoreTracker:
     scores: dict[ScoreEventKind, int] = dataclasses.field(
         default_factory=lambda: {kind: 0 for kind in ScoreEventKind}
@@ -135,6 +140,7 @@ class TurretBuildZone:
 @dataclasses.dataclass
 class TurretMachine:
     state: TurretState
+    kind: TurretKind
 
     firing_cooldown: float = 1_000.0
     firing_animation_duration: float = 250.0

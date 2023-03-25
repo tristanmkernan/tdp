@@ -1,5 +1,4 @@
 import logging
-import random
 
 import pygame
 import pygame.constants
@@ -7,6 +6,7 @@ from pygame import Vector2
 
 from tdp.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
+from .assets import Assets
 from .gui import GuiElements
 from .types import PlayerAction
 from .components import (
@@ -26,10 +26,10 @@ from .components import (
     Despawning,
 )
 from .entities import (
-    create_turret,
-    create_bullet,
+    create_bullet_turret,
+    fire_turret,
+    create_flame_turret,
     kill_enemy,
-    spawn_enemy,
     spawn_grunt,
     spawn_tank,
     track_score_event,
@@ -39,6 +39,7 @@ from .enums import (
     ScoreEventKind,
     InputEventKind,
     PlayerActionKind,
+    TurretKind,
     TurretState,
 )
 from .util import get_player_action_for_click, get_closest_enemy
@@ -199,7 +200,8 @@ class PlayerInputProcessor(esper.Processor):
             match action:
                 case {"kind": PlayerActionKind.SelectTurretBuildZone, "ent": ent}:
                     # for now, let's just build a turret here
-                    create_turret(self.world, ent, assets=assets)
+                    # create_bullet_turret(self.world, ent, assets=assets)
+                    create_flame_turret(self.world, ent, assets=assets)
 
 
 class ScoreTimeTrackerProcessor(esper.Processor):
@@ -277,7 +279,7 @@ class RotationProcessor(esper.Processor):
 
 
 class TurretStateProcessor(esper.Processor):
-    def process(self, *args, delta, assets, **kwargs):
+    def process(self, *args, delta, assets: Assets, **kwargs):
         for turret_ent, (
             turret_machine,
             turret_bbox,
@@ -318,10 +320,13 @@ class TurretStateProcessor(esper.Processor):
                             enemy_bbox.rect.center
                         ) - Vector2(turret_bbox.rect.center)
 
-                        # spawn bullet
-                        bullet = create_bullet(self.world, turret_ent, closest_enemy)
-
-                        logger.info("Spawned bullet id=%d", bullet)
+                        fire_turret(
+                            self.world,
+                            turret_ent,
+                            turret_machine,
+                            closest_enemy,
+                            assets=assets,
+                        )
 
                         turret_machine.elapsed = 0.0
 
@@ -347,11 +352,15 @@ class TurretStateProcessor(esper.Processor):
                             turret_machine.state = TurretState.Firing
 
             # sync state and sprite
-            match turret_machine.state:
-                case TurretState.FiringAnimation:
-                    renderable.image = renderable.original_image = assets.turret__firing
-                case _:
-                    renderable.image = renderable.original_image = assets.turret
+            match (turret_machine.kind, turret_machine.state):
+                case (TurretKind.Bullet, TurretState.FiringAnimation):
+                    renderable.image = (
+                        renderable.original_image
+                    ) = assets.bullet_turret__firing
+                case (TurretKind.Bullet, _):
+                    renderable.image = renderable.original_image = assets.bullet_turret
+                case (TurretKind.Flame, _):
+                    renderable.image = renderable.original_image = assets.flame_turret
 
 
 class PlayerResourcesProcessor(esper.Processor):
