@@ -103,17 +103,13 @@ def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int):
     turret_bbox = world.component_for_entity(turret_ent, BoundingBox)
     enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
 
-    vec = (
-        Vector2(enemy_bbox.rect.center) - Vector2(turret_bbox.rect.center)
-    ).normalize()
-    vec.scale_to_length(1.25)
+    bullet_size = 12, 12
+
+    # spawn bullet on top of enemy, "instantaneous" damage
 
     return world.create_entity(
-        # TODO bullet params
-        BoundingBox(rect=Rect(turret_bbox.rect.x, turret_bbox.rect.y, 12, 12)),
-        #        Renderable(),
+        BoundingBox(rect=Rect(enemy_bbox.rect.center, bullet_size)),
         Bullet(),
-        Velocity(vec=vec),
     )
 
 
