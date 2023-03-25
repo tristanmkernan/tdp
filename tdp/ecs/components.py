@@ -9,6 +9,23 @@ from .enums import RenderableOrder, ScoreEventKind, TurretState, EnemyKind, Turr
 class Enemy:
     bounty: int
 
+    max_health: int
+    health: int = dataclasses.field(init=False)
+
+    def take_damage(self, amount: int):
+        self.health = max(self.health - amount, 0)
+
+    @property
+    def is_dead(self):
+        return self.health == 0
+
+    @property
+    def health_ratio(self):
+        return int(100.0 * self.health / self.max_health)
+
+    def __post_init__(self):
+        self.health = self.max_health
+
 
 @dataclasses.dataclass
 class SpawningWave:
@@ -71,13 +88,8 @@ class Velocity:
 
 
 @dataclasses.dataclass
-class Bullet:
-    pass
-
-
-@dataclasses.dataclass
-class Flame:
-    pass
+class DamagesEnemy:
+    damage: int
 
 
 @dataclasses.dataclass

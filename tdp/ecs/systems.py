@@ -2,16 +2,16 @@ import logging
 
 import pygame
 import pygame.constants
-from pygame import Vector2
+from pygame import Vector2, Rect
 
-from tdp.constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from tdp.constants import MAP_HEIGHT, MAP_WIDTH
 
 from .assets import Assets
 from .gui import GuiElements
 from .types import PlayerAction
 from .components import (
     BoundingBox,
-    Bullet,
+    DamagesEnemy,
     Enemy,
     Lifetime,
     PlayerKeyInput,
@@ -54,7 +54,8 @@ def add_systems(world: esper.World):
     world.add_processor(MovementProcessor())
     world.add_processor(RotationProcessor())
     world.add_processor(SpawningProcessor())
-    world.add_processor(BulletProcessor())
+    world.add_processor(OutOfBoundsProcessor())
+    world.add_processor(DamagesEnemyProcessor())
     world.add_processor(PlayerInputProcessor())
     #    world.add_processor(ScoreTimeTrackerProcessor())
     world.add_processor(LifetimeProcessor())
@@ -142,35 +143,41 @@ class RenderingProcessor(esper.Processor):
         pygame.display.flip()
 
 
-class BulletProcessor(esper.Processor):
+class OutOfBoundsProcessor(esper.Processor):
     def process(self, *args, **kwargs):
-        for bullet_ent, (bullet, bullet_bbox) in self.world.get_components(
-            Bullet, BoundingBox
+        # TODO create OutOfBounds component?
+        # cleanup: when bullet leaves world boundaries
+        screen_rect = Rect((0, 0), (MAP_WIDTH, MAP_HEIGHT))
+        for damaging_ent, (damages_enemy, damaging_bbox) in self.world.get_components(
+            DamagesEnemy, BoundingBox
+        ):
+            if not damaging_bbox.rect.colliderect(screen_rect):
+                logger.info("Entity out of bounds id=%d", damaging_ent)
+                self.world.delete_entity(damaging_ent)
+
+
+class DamagesEnemyProcessor(esper.Processor):
+    def process(self, *args, **kwargs):
+        for damaging_ent, (damages_enemy, damaging_bbox) in self.world.get_components(
+            DamagesEnemy, BoundingBox
         ):
             for enemy_ent, (
                 enemy,
                 enemy_bbox,
             ) in self.world.get_components(Enemy, BoundingBox):
-                if bullet_bbox.rect.colliderect(enemy_bbox.rect):
-                    logger.info("Destroying entity id=%d", enemy_ent)
+                if damaging_bbox.rect.colliderect(enemy_bbox.rect):
+                    logger.debug("Damaging entity id=%d", enemy_ent)
 
-                    track_score_event(self.world, ScoreEventKind.EnemyKill)
+                    enemy.take_damage(damages_enemy.damage)
 
-                    ## destroy enemy and self
-                    kill_enemy(self.world, enemy_ent)
-                    self.world.delete_entity(bullet_ent)
+                    if enemy.is_dead:
+                        track_score_event(self.world, ScoreEventKind.EnemyKill)
+
+                        kill_enemy(self.world, enemy_ent)
+
+                    self.world.delete_entity(damaging_ent)
 
                     break
-
-            # cleanup: when bullet leaves world boundaries
-            if (
-                bullet_bbox.rect.x <= 0
-                or bullet_bbox.rect.x >= SCREEN_WIDTH
-                or bullet_bbox.rect.y <= 0
-                or bullet_bbox.rect.y >= SCREEN_HEIGHT
-            ):
-                logger.info("Bullet out of bounds id=%d", bullet_ent)
-                self.world.delete_entity(bullet_ent)
 
 
 class PlayerInputProcessor(esper.Processor):

@@ -10,8 +10,7 @@ from ..constants import PLAYER_STARTING_MONEY
 from .assets import Assets
 from .components import (
     BoundingBox,
-    Bullet,
-    Flame,
+    DamagesEnemy,
     Despawnable,
     Enemy,
     PathGraph,
@@ -42,21 +41,27 @@ def create_scoreboard(world: esper.World):
 
 
 def spawn_tank(world: esper.World, spawn_point: int, *, assets: Assets):
-    return spawn_enemy(world, spawn_point, assets.tank)
+    return spawn_enemy(world, spawn_point, assets.tank, bounty=25, max_health=10)
 
 
 def spawn_grunt(world: esper.World, spawn_point: int, *, assets: Assets):
-    return spawn_enemy(world, spawn_point, assets.grunt)
+    return spawn_enemy(world, spawn_point, assets.grunt, bounty=5, max_health=2)
 
 
-def spawn_enemy(world: esper.World, spawn_point: int, image: pygame.Surface):
+def spawn_enemy(
+    world: esper.World,
+    spawn_point: int,
+    image: pygame.Surface,
+    bounty: int,
+    max_health: int,
+):
     spawn_bbox = world.component_for_entity(spawn_point, BoundingBox)
     spawn_path_graph = world.component_for_entity(spawn_point, PathGraph)
 
     image_rect = image.get_rect()
 
     return world.create_entity(
-        Enemy(bounty=10),
+        Enemy(bounty=bounty, max_health=max_health),
         Velocity(),
         BoundingBox(
             rect=Rect(
@@ -175,7 +180,7 @@ def create_flame(
     return world.create_entity(
         # TODO flames should spawn from outside turret, not inside
         BoundingBox(rect=flame_rect, rotation=vec),
-        Flame(),
+        DamagesEnemy(damage=1),
         Renderable(image=image, order=RenderableOrder.Objects),
         Velocity(vec=vec),
     )
@@ -191,7 +196,7 @@ def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int):
 
     return world.create_entity(
         BoundingBox(rect=Rect(enemy_bbox.rect.center, bullet_size)),
-        Bullet(),
+        DamagesEnemy(damage=1),
     )
 
 
