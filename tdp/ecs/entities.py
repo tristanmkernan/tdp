@@ -4,6 +4,8 @@ import pygame
 
 from pygame import Rect, Vector2
 
+from ..constants import PLAYER_STARTING_MONEY
+
 from .assets import Assets
 from .components import (
     BoundingBox,
@@ -12,6 +14,7 @@ from .components import (
     Enemy,
     PathGraph,
     PlayerKeyInput,
+    PlayerResources,
     ScoreTracker,
     TurretMachine,
     UnitPathing,
@@ -50,7 +53,7 @@ def spawn_enemy(world: esper.World, spawn_point: int, image: pygame.Surface):
     image_rect = image.get_rect()
 
     return world.create_entity(
-        Enemy(),
+        Enemy(bounty=10),
         Velocity(),
         BoundingBox(
             rect=Rect(
@@ -64,6 +67,17 @@ def spawn_enemy(world: esper.World, spawn_point: int, image: pygame.Surface):
         Despawnable(),
         UnitPathing(vertices=spawn_path_graph.vertices),
     )
+
+
+def kill_enemy(world: esper.World, enemy_ent: int):
+    # remove enemy entity
+    world.delete_entity(enemy_ent)
+
+    # increase player resources by enemy bounty
+    enemy = world.component_for_entity(enemy_ent, Enemy)
+    player_resources = world.get_component(PlayerResources)[0][1]
+
+    player_resources.money += enemy.bounty
 
 
 def create_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
@@ -92,7 +106,7 @@ def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int):
     vec = (
         Vector2(enemy_bbox.rect.center) - Vector2(turret_bbox.rect.center)
     ).normalize()
-    vec.scale_to_length(0.5)
+    vec.scale_to_length(1.25)
 
     return world.create_entity(
         # TODO bullet params
@@ -107,6 +121,10 @@ def create_player_input(world: esper.World):
     player_input = world.create_entity()
 
     world.add_component(player_input, PlayerKeyInput())
+
+
+def create_player_resources(world: esper.World):
+    return world.create_entity(PlayerResources(money=PLAYER_STARTING_MONEY))
 
 
 def track_score_event(world: esper.World, kind: ScoreEventKind):

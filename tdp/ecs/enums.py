@@ -34,3 +34,8 @@ class TurretState(enum.IntEnum):
     Tracking = enum.auto()
     Firing = enum.auto()
     FiringAnimation = enum.auto()
+
+
+class EnemyKind(enum.IntEnum):
+    Grunt = enum.auto()
+    Tank = enum.auto()

@@ -450,6 +450,21 @@ files = [
 ]
 
 [[package]]
+name = "pygame-gui"
+version = "0.6.8"
+description = "A GUI module for pygame 2"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pygame_gui-0.6.8-py3-none-any.whl", hash = "sha256:c7009ea9fea9f7850c51501c18c6ae8dc3bbfe8795e32659dc339021ae4f46c2"},
+]
+
+[package.dependencies]
+pygame = ">=2.0.1"
+python-i18n = ">=0.3.9"
+
+[[package]]
 name = "pygments"
 version = "2.14.0"
 description = "Pygments is a syntax highlighting package written in Python."
@@ -463,6 +478,21 @@ files = [
 
 [package.extras]
 plugins = ["importlib-metadata"]
+
+[[package]]
+name = "python-i18n"
+version = "0.3.9"
+description = "Translation library for Python"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-i18n-0.3.9.tar.gz", hash = "sha256:df97f3d2364bf3a7ebfbd6cbefe8e45483468e52a9e30b909c6078f5f471e4e8"},
+    {file = "python_i18n-0.3.9-py3-none-any.whl", hash = "sha256:bda5b8d889ebd51973e22e53746417bd32783c9bd6780fd27cadbb733915651d"},
+]
+
+[package.extras]
+yaml = ["pyyaml (>=3.10)"]
 
 [[package]]
 name = "pytmx"
@@ -539,4 +569,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "21a1628877ac90d6d2afb4ea3fe3a591fd50aa8318131eca8d55bef3a7cf2803"
+content-hash = "88d673f425154c4db818806230ee1e59e2f57d81ebdf6bd522613295947bbce7"

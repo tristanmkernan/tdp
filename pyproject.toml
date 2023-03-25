@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.11"
 pygame = "^2.1.2"
 pytmx = "^3.31"
+pygame-gui = "^0.6.8"
 
 [tool.poetry.dev-dependencies]
 black = "^23.1.0"

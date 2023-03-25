@@ -2,17 +2,52 @@ import dataclasses
 
 from pygame import Rect, Vector2, Surface
 
-from .enums import RenderableOrder, ScoreEventKind, TurretState
+from .enums import RenderableOrder, ScoreEventKind, TurretState, EnemyKind
 
 
+@dataclasses.dataclass
 class Enemy:
-    pass
+    bounty: int
+
+
+@dataclasses.dataclass
+class SpawningWave:
+    wave: list[EnemyKind]
+    current_index: int = 0
+
+    def get_and_advance(self):
+        enemy_kind = self.wave[self.current_index]
+
+        self.current_index += 1
+
+        return enemy_kind
+
+    @property
+    def over(self):
+        return self.current_index >= len(self.wave)
+
+    @property
+    def progress(self):
+        return int(100.0 * self.current_index / len(self.wave))
 
 
 @dataclasses.dataclass
 class Spawning:
+    waves: list[SpawningWave]
+    current_wave_index: int = 0
     rate: float = 0.0
     elapsed: float = 0.0
+
+    def advance(self):
+        self.current_wave_index += 1
+
+    @property
+    def current_wave(self):
+        return self.waves[self.current_wave_index]
+
+    @property
+    def current_wave_num(self):
+        return self.current_wave_index + 1
 
     @property
     def every(self):
@@ -114,3 +149,8 @@ class TurretMachine:
     @property
     def finished_firing_animation(self):
         return self.elapsed >= self.firing_animation_duration
+
+
+@dataclasses.dataclass
+class PlayerResources:
+    money: int

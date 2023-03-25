@@ -14,6 +14,7 @@ from .components import (
     TurretBuildZone,
 )
 from .enums import RenderableOrder, ObjectKind
+from .waves import generate_waves
 
 from . import esper
 
@@ -90,7 +91,7 @@ def load_map(world: esper.World):
     vertices.append(Vector2(end_bbox.rect.centerx, end_bbox.rect.centery))
 
     world.create_entity(
-        Spawning(rate=1.0 / 5_000.0),
+        Spawning(rate=1.0 / 5_000.0, waves=generate_waves()),
         BoundingBox(rect=Rect(start_obj.x, start_obj.y, 0, 0)),
         PathGraph(vertices=vertices),
     )

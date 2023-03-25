@@ -7,6 +7,7 @@ from pygame import Vector2
 
 from tdp.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
+from .gui import GuiElements
 from .types import PlayerAction
 from .components import (
     BoundingBox,
@@ -14,6 +15,7 @@ from .components import (
     Enemy,
     Lifetime,
     PlayerKeyInput,
+    PlayerResources,
     TurretMachine,
     Velocity,
     Spawning,
@@ -26,12 +28,14 @@ from .components import (
 from .entities import (
     create_turret,
     create_bullet,
+    kill_enemy,
     spawn_enemy,
     spawn_grunt,
     spawn_tank,
     track_score_event,
 )
 from .enums import (
+    EnemyKind,
     ScoreEventKind,
     InputEventKind,
     PlayerActionKind,
@@ -44,6 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 def add_systems(world: esper.World):
+    world.add_processor(PlayerResourcesProcessor())
     world.add_processor(TurretStateProcessor())
     world.add_processor(MovementProcessor())
     world.add_processor(RotationProcessor())
@@ -72,19 +77,35 @@ class MovementProcessor(esper.Processor):
 
 
 class SpawningProcessor(esper.Processor):
-    def process(self, *args, delta, assets, **kwargs):
-        for ent, spawning in self.world.get_component(Spawning):
-            spawning.elapsed += delta
+    def process(self, *args, delta, gui_elements: GuiElements, assets, **kwargs):
+        # NOTE: only one spawn point at the moment
+        spawning_ent, spawning = self.world.get_component(Spawning)[0]
 
-            if spawning.elapsed > spawning.every:
-                if random.randint(0, 1):
-                    enemy = spawn_grunt(self.world, ent, assets=assets)
-                else:
-                    enemy = spawn_tank(self.world, ent, assets=assets)
+        wave = spawning.current_wave
 
-                logger.info("Spawned new enemy id=%d", enemy)
+        spawning.elapsed += delta
 
-                spawning.elapsed = 0.0
+        # spawn, if necessary
+        if spawning.elapsed > spawning.every:
+            enemy_kind = wave.get_and_advance()
+
+            if wave.over:
+                spawning.advance()
+
+            match enemy_kind:
+                case EnemyKind.Grunt:
+                    enemy = spawn_grunt(self.world, spawning_ent, assets=assets)
+                case EnemyKind.Tank:
+                    enemy = spawn_tank(self.world, spawning_ent, assets=assets)
+
+            logger.info("Spawned new enemy id=%d", enemy)
+
+            spawning.elapsed = 0.0
+
+        # update ui
+        gui_elements.wave_label.set_text(f"Wave {spawning.current_wave_num}")
+
+        gui_elements.wave_progress.set_current_progress(wave.progress)
 
 
 class RenderingProcessor(esper.Processor):
@@ -93,12 +114,7 @@ class RenderingProcessor(esper.Processor):
 
         self.font = pygame.font.SysFont("Comic", 40)
 
-    def process(self, *args, **kwargs):
-        show_fps = kwargs["show_fps"]
-        screen = kwargs["screen"]
-        clock = kwargs["clock"]
-        debug = kwargs["debug"]
-
+    def process(self, *args, show_fps, screen, clock, debug, gui_manager, **kwargs):
         screen.fill((255, 255, 255))
 
         renderables = self.world.get_components(Renderable, BoundingBox)
@@ -113,33 +129,14 @@ class RenderingProcessor(esper.Processor):
             if debug:
                 pygame.draw.rect(screen, (0, 0, 0), bbox.rect, 2)
 
-        # _, score_tracker = self.world.get_component(ScoreTracker)[0]
-        # _, (_, bullet_ammo) = self.world.get_components(PlayerShip, BulletAmmo)[0]
-
-        # time_str = f"Time {score_tracker.scores[ScoreEventKind.Time]:.1f}"
-        # screen.blit(
-        #     self.font.render(time_str, True, pygame.Color(0, 0, 0)),
-        #     (SCREEN_WIDTH - 150, 0),
-        # )
-
-        # kills_str = f"Kills {score_tracker.scores[ScoreEventKind.EnemyKill]}"
-        # screen.blit(
-        #     self.font.render(kills_str, True, pygame.Color(0, 0, 0)),
-        #     (SCREEN_WIDTH - 150, 24),
-        # )
-
-        # ammo_str = f"Ammo {bullet_ammo.count}"
-        # screen.blit(
-        #     self.font.render(ammo_str, True, pygame.Color(0, 0, 0)),
-        #     (SCREEN_WIDTH - 150, 48),
-        # )
-
         if show_fps:
             fps_str = f"{clock.get_fps():.1f}"
 
             fps_overlay = self.font.render(fps_str, True, pygame.Color(0, 0, 0))
 
             screen.blit(fps_overlay, (0, 0))
+
+        gui_manager.draw_ui(screen)
 
         pygame.display.flip()
 
@@ -159,7 +156,7 @@ class BulletProcessor(esper.Processor):
                     track_score_event(self.world, ScoreEventKind.EnemyKill)
 
                     ## destroy enemy and self
-                    self.world.delete_entity(enemy_ent)
+                    kill_enemy(self.world, enemy_ent)
                     self.world.delete_entity(bullet_ent)
 
                     break
@@ -355,3 +352,11 @@ class TurretStateProcessor(esper.Processor):
                     renderable.image = renderable.original_image = assets.turret__firing
                 case _:
                     renderable.image = renderable.original_image = assets.turret
+
+
+class PlayerResourcesProcessor(esper.Processor):
+    def process(self, *args, gui_elements: GuiElements, **kwargs):
+        # update the resources label with the current player resources
+        player_resources = self.world.get_component(PlayerResources)[0][1]
+
+        gui_elements.resources_label.set_text(f"Money: ${player_resources.money}")

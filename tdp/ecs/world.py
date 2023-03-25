@@ -1,6 +1,7 @@
 from . import esper
 
 from .entities import (
+    create_player_resources,
     create_scoreboard,
     create_player_input,
 )
@@ -20,5 +21,7 @@ def build_world() -> esper.World:
     create_scoreboard(world)
 
     create_player_input(world)
+
+    create_player_resources(world)
 
     return world
