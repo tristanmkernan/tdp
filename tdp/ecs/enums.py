@@ -62,3 +62,13 @@ class PlayerInputState(enum.IntEnum):
 class SpawningWaveStepKind(enum.IntEnum):
     SpawnEnemy = enum.auto()
     Wait = enum.auto()
+
+
+class VelocityAdjustmentKind(enum.IntEnum):
+    Immobile = enum.auto()
+    Slowdown = enum.auto()
+
+
+class DamagesEnemyOnCollisionBehavior(enum.IntEnum):
+    DeleteEntity = enum.auto()
+    RemoveComponent = enum.auto()

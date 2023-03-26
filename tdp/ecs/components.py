@@ -3,11 +3,13 @@ import dataclasses
 from pygame import Rect, Vector2, Surface
 
 from .enums import (
+    DamagesEnemyOnCollisionBehavior,
     RenderableOrder,
     ScoreEventKind,
     TurretState,
     TurretKind,
     PlayerInputState,
+    VelocityAdjustmentKind,
 )
 from .types import SpawningWaveStep
 
@@ -87,16 +89,37 @@ class Despawnable:
 
 
 @dataclasses.dataclass
+class VelocityAdjustment:
+    kind: VelocityAdjustmentKind
+
+    duration: float
+    elapsed: float = 0.0
+
+    magnitude: float = 0.0
+
+    # TODO this should be a mixin, often repeated
+    @property
+    def expired(self):
+        return self.elapsed >= self.duration
+
+
+@dataclasses.dataclass
 class Velocity:
     vec: Vector2 = dataclasses.field(default_factory=Vector2)
+    adjustments: dict[VelocityAdjustmentKind, VelocityAdjustment] = dataclasses.field(
+        default_factory=dict
+    )
 
 
 @dataclasses.dataclass
 class DamagesEnemy:
     damage: int
+    on_collision_behavior: DamagesEnemyOnCollisionBehavior = (
+        DamagesEnemyOnCollisionBehavior.DeleteEntity
+    )
+
     # how many enemies this entity can damage before being removed
     pierces: int = 1
-
     pierced_count: int = 0
 
     @property

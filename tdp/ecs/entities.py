@@ -27,6 +27,7 @@ from .components import (
     FadeOut,
 )
 from .enums import (
+    DamagesEnemyOnCollisionBehavior,
     RenderableOrder,
     ScoreEventKind,
     TurretKind,
@@ -223,22 +224,15 @@ def create_missile_explosion(
     explosion_rect = Rect((0, 0), image_rect.size)
     explosion_rect.center = missile_bbox.rect.center
 
-    # create two entities:
-    #   one for visual
-    #   one for damage (since damaging an enemy removes the entity)
-
-    # visual component
     world.create_entity(
         BoundingBox(rect=explosion_rect),
         Renderable(image=image, order=RenderableOrder.Objects),
         TimeToLive(duration=250.0),
-    )
-
-    # damage component
-    world.create_entity(
-        BoundingBox(rect=explosion_rect),
-        Renderable(image=image, order=RenderableOrder.Objects),
-        DamagesEnemy(damage=missile.damage, pierced_count=9999),
+        DamagesEnemy(
+            damage=missile.damage,
+            pierced_count=9999,
+            on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
+        ),
     )
 
 

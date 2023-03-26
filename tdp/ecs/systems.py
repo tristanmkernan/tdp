@@ -27,6 +27,7 @@ from .components import (
     UnitPathing,
     Despawnable,
     Despawning,
+    VelocityAdjustment,
 )
 from .entities import (
     fire_turret,
@@ -40,6 +41,7 @@ from .entities import (
     track_score_event,
 )
 from .enums import (
+    DamagesEnemyOnCollisionBehavior,
     EnemyKind,
     PlayerInputState,
     ScoreEventKind,
@@ -48,6 +50,7 @@ from .enums import (
     SpawningWaveStepKind,
     TurretKind,
     TurretState,
+    VelocityAdjustmentKind,
 )
 from .resources import (
     player_has_resources_to_build_turret,
@@ -83,16 +86,35 @@ def add_systems(world: esper.World):
 
 
 class MovementProcessor(esper.Processor):
-    def process(self, *args, delta, **kwargs):
-        # update rotation
-        # for _, (rot, pos) in self.world.get_components(Rotation, Position):
-        #     pos.rotation += rot.speed * delta
-        #     pos.normalize_rotation()
-
-        # update position
+    def process(self, *args, delta: float, **kwargs):
         for _, (vel, bbox) in self.world.get_components(Velocity, BoundingBox):
-            bbox.rect.centerx += vel.vec.x * delta
-            bbox.rect.centery += vel.vec.y * delta
+            velocity_vector = vel.vec.copy()
+
+            # dynamic adjustments from e.g. status effects
+            for adjustment in vel.adjustments.values():
+                match adjustment:
+                    case VelocityAdjustment(kind=VelocityAdjustmentKind.Immobile):
+                        velocity_vector.scale_to_length(0.0)
+                    case VelocityAdjustment(
+                        kind=VelocityAdjustmentKind.Slowdown, magnitude=magnitude
+                    ):
+                        velocity_vector.scale_to_length(magnitude)
+
+            # update position
+            bbox.rect.centerx += velocity_vector.x * delta
+            bbox.rect.centery += velocity_vector.y * delta
+
+            # update adjustments
+            to_remove = []
+
+            for adjustment_kind, adjustment in vel.adjustments.items():
+                adjustment.elapsed += delta
+
+                if adjustment.expired:
+                    to_remove.append(adjustment_kind)
+
+            for key in to_remove:
+                del vel.adjustments[key]
 
 
 class SpawningProcessor(esper.Processor):
@@ -199,7 +221,11 @@ class DamagesEnemyProcessor(esper.Processor):
                     damages_enemy.pierced_count += 1
 
                     if damages_enemy.expired:
-                        self.world.delete_entity(damaging_ent)
+                        match damages_enemy.on_collision_behavior:
+                            case DamagesEnemyOnCollisionBehavior.DeleteEntity:
+                                self.world.delete_entity(damaging_ent)
+                            case DamagesEnemyOnCollisionBehavior.RemoveComponent:
+                                self.world.remove_component(damaging_ent, DamagesEnemy)
 
                         break
 
