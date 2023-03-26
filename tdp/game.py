@@ -16,7 +16,9 @@ def play_game():
     pygame.init()
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    gui_manager = pygame_gui.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT))
+    gui_manager = pygame_gui.UIManager(
+        (SCREEN_WIDTH, SCREEN_HEIGHT), "assets/theme.json"
+    )
 
     clock = pygame.time.Clock()
 
@@ -59,6 +61,13 @@ def play_game():
                                 "pos": event.pos,
                             }
                         )
+                case pygame_gui.UI_BUTTON_PRESSED:
+                    input_events.append(
+                        {
+                            "kind": InputEventKind.UIButtonPress,
+                            "ui_element": event.ui_element,
+                        }
+                    )
 
             gui_manager.process_events(event)
 

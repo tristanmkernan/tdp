@@ -2,7 +2,14 @@ import dataclasses
 
 from pygame import Rect, Vector2, Surface
 
-from .enums import RenderableOrder, ScoreEventKind, TurretState, EnemyKind, TurretKind
+from .enums import (
+    RenderableOrder,
+    ScoreEventKind,
+    TurretState,
+    EnemyKind,
+    TurretKind,
+    PlayerInputState,
+)
 
 
 @dataclasses.dataclass
@@ -101,8 +108,10 @@ class ScoreTracker:
 
 
 @dataclasses.dataclass
-class PlayerKeyInput:
-    keydowns: set[int] = dataclasses.field(default_factory=set)
+class PlayerInputMachine:
+    state: PlayerInputState = PlayerInputState.Idle
+
+    turret_to_build: TurretKind | None = None
 
 
 @dataclasses.dataclass

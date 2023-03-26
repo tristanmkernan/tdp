@@ -14,7 +14,7 @@ from .components import (
     DamagesEnemy,
     Enemy,
     Lifetime,
-    PlayerKeyInput,
+    PlayerInputMachine,
     PlayerResources,
     TurretMachine,
     Velocity,
@@ -26,9 +26,9 @@ from .components import (
     Despawning,
 )
 from .entities import (
-    create_bullet_turret,
     fire_turret,
     create_flame_turret,
+    create_bullet_turret,
     kill_enemy,
     spawn_grunt,
     spawn_tank,
@@ -36,13 +36,22 @@ from .entities import (
 )
 from .enums import (
     EnemyKind,
+    PlayerInputState,
     ScoreEventKind,
     InputEventKind,
     PlayerActionKind,
     TurretKind,
     TurretState,
 )
-from .util import get_player_action_for_click, get_closest_enemy
+from .resources import (
+    player_has_resources_to_build_turret,
+    subtract_resources_to_build_turret,
+)
+from .util import (
+    get_player_action_for_button_press,
+    get_player_action_for_click,
+    get_closest_enemy,
+)
 from . import esper
 
 logger = logging.getLogger(__name__)
@@ -181,14 +190,14 @@ class DamagesEnemyProcessor(esper.Processor):
 
 
 class PlayerInputProcessor(esper.Processor):
-    def process(self, *args, assets, **kwargs):
+    def process(self, *args, assets: Assets, gui_elements: GuiElements, **kwargs):
         # TODO consider sorting by keydown, then keyup,
         #   in case we receive a sequence "out of order" like
         #   [W key up, W key down]
         input_events = kwargs["player_input_events"]
         player_actions: list[PlayerAction] = []
 
-        _, player_key_input = self.world.get_component(PlayerKeyInput)[0]
+        player_input_machine = self.world.get_component(PlayerInputMachine)[0][1]
 
         for input_event in input_events:
             logger.debug(
@@ -202,13 +211,84 @@ class PlayerInputProcessor(esper.Processor):
                     # may or may not click on an object
                     if action := get_player_action_for_click(self.world, pos):
                         player_actions.append(action)
+                case {"kind": InputEventKind.UIButtonPress, "ui_element": ui_element}:
+                    if action := get_player_action_for_button_press(
+                        self.world, ui_element, gui_elements
+                    ):
+                        player_actions.append(action)
+
+        acceptable_actions: dict[PlayerInputState, set[PlayerActionKind]] = {
+            PlayerInputState.Idle: {PlayerActionKind.SetTurretToBuild},
+            PlayerInputState.BuildingTurret: {
+                PlayerActionKind.ClearTurretToBuild,
+                PlayerActionKind.SetTurretToBuild,
+                PlayerActionKind.SelectTurretBuildZone,
+            },
+        }
 
         for action in player_actions:
+            if not action["kind"] in acceptable_actions[player_input_machine.state]:
+                continue
+
             match action:
+                case {
+                    "kind": PlayerActionKind.SetTurretToBuild,
+                    "turret_kind": turret_kind,
+                }:
+                    if player_has_resources_to_build_turret(self.world, turret_kind):
+                        player_input_machine.turret_to_build = turret_kind
+                        player_input_machine.state = PlayerInputState.BuildingTurret
+
+                case {"kind": PlayerActionKind.ClearTurretToBuild}:
+                    player_input_machine.turret_to_build = None
+                    player_input_machine.state = PlayerInputState.Idle
+
                 case {"kind": PlayerActionKind.SelectTurretBuildZone, "ent": ent}:
                     # for now, let's just build a turret here
-                    # create_bullet_turret(self.world, ent, assets=assets)
-                    create_flame_turret(self.world, ent, assets=assets)
+                    # TODO also could have hover state, building time, so on
+                    match player_input_machine.turret_to_build:
+                        case TurretKind.Flame:
+                            create_flame_turret(self.world, ent, assets=assets)
+                        case TurretKind.Bullet:
+                            create_bullet_turret(self.world, ent, assets=assets)
+                        case TurretKind.Rocket:
+                            create_rocket_turret(self.world, ent, assets=assets)
+
+                    subtract_resources_to_build_turret(
+                        self.world, player_input_machine.turret_to_build
+                    )
+
+                    player_input_machine.turret_to_build = None
+                    player_input_machine.state = PlayerInputState.Idle
+
+        # TODO synchronize UI with state
+        # maybe add a border (or other visual effect) to the selected turret button
+        turret_gui_element_map = {
+            TurretKind.Bullet: gui_elements.basic_turret_build_button,
+            TurretKind.Flame: gui_elements.flame_turret_build_button,
+            TurretKind.Rocket: gui_elements.rocket_turret_build_button,
+        }
+
+        match player_input_machine.state:
+            case PlayerInputState.Idle:
+                # reset button classes
+                for gui_button in turret_gui_element_map.values():
+                    # TODO
+                    # gui_button.class_ids = ["@turret-build-button--selected"]
+                    gui_button.enable()
+            case PlayerInputState.BuildingTurret:
+                # reset button classes
+                for gui_button in turret_gui_element_map.values():
+                    # TODO
+                    # gui_button.class_ids = ["@turret-build-button--selected"]
+                    gui_button.enable()
+
+                if gui_button := turret_gui_element_map.get(
+                    player_input_machine.turret_to_build
+                ):
+                    # TODO
+                    # gui_button.class_ids = ["@turret-build-button--selected"]
+                    gui_button.disable()
 
 
 class ScoreTimeTrackerProcessor(esper.Processor):

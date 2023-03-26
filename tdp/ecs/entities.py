@@ -14,7 +14,7 @@ from .components import (
     Despawnable,
     Enemy,
     PathGraph,
-    PlayerKeyInput,
+    PlayerInputMachine,
     PlayerResources,
     ScoreTracker,
     TurretMachine,
@@ -203,7 +203,7 @@ def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int):
 def create_player_input(world: esper.World):
     player_input = world.create_entity()
 
-    world.add_component(player_input, PlayerKeyInput())
+    world.add_component(player_input, PlayerInputMachine())
 
 
 def create_player_resources(world: esper.World):

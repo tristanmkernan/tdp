@@ -13,9 +13,14 @@ class InputEventKind(enum.IntEnum):
     MouseLeftClickUp = enum.auto()
     MouseLeftClickDown = enum.auto()
 
+    UIButtonPress = enum.auto()
+
 
 class PlayerActionKind(enum.IntEnum):
     SelectTurretBuildZone = enum.auto()
+
+    SetTurretToBuild = enum.auto()
+    ClearTurretToBuild = enum.auto()
 
 
 class RenderableOrder(enum.IntEnum):
@@ -45,3 +50,8 @@ class TurretKind(enum.IntEnum):
     Bullet = enum.auto()
     Flame = enum.auto()
     Rocket = enum.auto()
+
+
+class PlayerInputState(enum.IntEnum):
+    Idle = enum.auto()
+    BuildingTurret = enum.auto()

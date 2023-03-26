@@ -1,10 +1,16 @@
+import logging
+
 from pygame.math import Vector2
+
+from tdp.ecs.gui import GuiElements
 
 from .components import BoundingBox, TurretBuildZone, Enemy
 from .types import PlayerAction
-from .enums import PlayerActionKind
+from .enums import PlayerActionKind, TurretKind
 
 from . import esper
+
+logger = logging.getLogger(__name__)
 
 
 def get_player_action_for_click(world: esper.World, pos) -> PlayerAction | None:
@@ -14,6 +20,31 @@ def get_player_action_for_click(world: esper.World, pos) -> PlayerAction | None:
             return {"kind": PlayerActionKind.SelectTurretBuildZone, "ent": ent}
 
     return None
+
+
+def get_player_action_for_button_press(
+    world: esper.World, ui_element, gui_elements: GuiElements
+) -> PlayerAction | None:
+    match ui_element:
+        case gui_elements.basic_turret_build_button:
+            return {
+                "kind": PlayerActionKind.SetTurretToBuild,
+                "turret_kind": TurretKind.Bullet,
+            }
+        case gui_elements.flame_turret_build_button:
+            return {
+                "kind": PlayerActionKind.SetTurretToBuild,
+                "turret_kind": TurretKind.Flame,
+            }
+        case gui_elements.rocket_turret_build_button:
+            return {
+                "kind": PlayerActionKind.SetTurretToBuild,
+                "turret_kind": TurretKind.Rocket,
+            }
+        case gui_elements.clear_turret_build_button:
+            return {
+                "kind": PlayerActionKind.ClearTurretToBuild,
+            }
 
 
 def get_closest_enemy(
