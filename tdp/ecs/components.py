@@ -97,6 +97,14 @@ class Velocity:
 @dataclasses.dataclass
 class DamagesEnemy:
     damage: int
+    # how many enemies this entity can damage before being removed
+    pierces: int = 1
+
+    pierced_count: int = 0
+
+    @property
+    def expired(self):
+        return self.pierced_count >= self.pierces
 
 
 @dataclasses.dataclass
@@ -165,6 +173,7 @@ class TurretMachine:
 
     firing_cooldown: float = 1_000.0
     firing_animation_duration: float = 250.0
+    reloading_duration: float = 0.0
     elapsed: float = 0.0
     idle_rotation_speed: float = 0.025
     range: float = 500.0
@@ -177,7 +186,43 @@ class TurretMachine:
     def finished_firing_animation(self):
         return self.elapsed >= self.firing_animation_duration
 
+    @property
+    def finished_reloading(self):
+        return self.elapsed >= self.reloading_duration
+
 
 @dataclasses.dataclass
 class PlayerResources:
     money: int
+
+
+@dataclasses.dataclass
+class RocketMissile:
+    damage: int
+
+
+class RemoveOnOutOfBounds:
+    pass
+
+
+@dataclasses.dataclass
+class TimeToLive:
+    elapsed: float = 0.0
+    duration: float = 250.0
+
+    @property
+    def expired(self):
+        return self.elapsed >= self.duration
+
+
+@dataclasses.dataclass
+class FadeOut:
+    elapsed: float = 0.0
+    duration: float = 250.0
+
+    @property
+    def alpha(self):
+        """
+        Percent complete
+        """
+        return max(0.0, self.elapsed / self.duration)

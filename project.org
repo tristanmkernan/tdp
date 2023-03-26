@@ -1,0 +1,28 @@
+#+title: Tower Defense Proto
+
+* Todo
+
+- [ ] Improve wave generation
+- [ ] Enemy health bars
+- [ ] Turret upgrades
+- [ ] Status effects
+  - [ ] On fire + visual effects
+  - [ ] Slow or frozen + visual effects
+- [ ] More enemy types
+- [ ] Smart enemies
+  - [ ] Jetpack or digging enemies
+- [ ] General UI work
+  - [ ] Main screen
+  - [ ] High scores
+  - [ ] Game over
+  - [ ] Map selection
+- [ ] More turret types
+  - [ ] Rocket
+  - [ ] Freezing
+  - [ ] Slowing
+- [ ] Damage should be dynamic
+  - Interacts with upgrades
+- [ ] Enemy death leaves skull on ground
+  - Skull fades out over time
+- [ ] Transformation system
+  - Combines all potential transformations, like fade in/out, grow/shrink, rotate

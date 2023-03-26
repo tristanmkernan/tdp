@@ -21,6 +21,10 @@ from .components import (
     UnitPathing,
     Velocity,
     Renderable,
+    RocketMissile,
+    RemoveOnOutOfBounds,
+    TimeToLive,
+    FadeOut,
 )
 from .enums import (
     RenderableOrder,
@@ -113,6 +117,32 @@ def create_flame_turret(world: esper.World, build_zone_ent: int, *, assets: Asse
     )
 
 
+def create_rocket_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
+    bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
+
+    image = assets.rocket_turret
+    image_rect = image.get_rect()
+
+    bbox = BoundingBox(rect=Rect(image_rect))
+    bbox.rect.center = bz_bbox.rect.center
+
+    # for now, remove build zone entity, but may want to disable instead
+    world.delete_entity(build_zone_ent)
+
+    return world.create_entity(
+        TurretMachine(
+            state=TurretState.Idle,
+            kind=TurretKind.Rocket,
+            firing_cooldown=2_000.0,
+            firing_animation_duration=0,
+            reloading_duration=500.0,
+            range=750,
+        ),
+        bbox,
+        Renderable(image=image, order=RenderableOrder.Objects),
+    )
+
+
 def create_bullet_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
@@ -147,6 +177,70 @@ def fire_turret(
         case TurretKind.Flame:
             create_flame(world, turret_ent, enemy_ent, assets=assets)
 
+        case TurretKind.Rocket:
+            create_missile(world, turret_ent, enemy_ent, assets=assets)
+
+
+def create_missile(
+    world: esper.World, turret_ent: int, enemy_ent: int, *, assets: Assets
+):
+    turret_bbox = world.component_for_entity(turret_ent, BoundingBox)
+    enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
+
+    image = assets.rocket_missile
+    image_rect = image.get_rect()
+
+    vec = (
+        Vector2(enemy_bbox.rect.center) - Vector2(turret_bbox.rect.center)
+    ).normalize()
+
+    vec.scale_to_length(0.95)
+
+    # missle should spawn inside turret, but centered
+    missile_rect = Rect((0, 0), image_rect.size)
+    missile_rect.center = turret_bbox.rect.center
+
+    return world.create_entity(
+        BoundingBox(rect=missile_rect, rotation=vec),
+        Renderable(image=image, order=RenderableOrder.Objects),
+        Velocity(vec=vec),
+        RocketMissile(damage=15),
+        RemoveOnOutOfBounds(),
+    )
+
+
+def create_missile_explosion(
+    world: esper.World,
+    missile: RocketMissile,
+    missile_bbox: BoundingBox,
+    *,
+    assets: Assets,
+):
+    image = assets.rocket_missile_explosion
+    image_rect = image.get_rect()
+
+    # explosion should spawn at missile center
+    explosion_rect = Rect((0, 0), image_rect.size)
+    explosion_rect.center = missile_bbox.rect.center
+
+    # create two entities:
+    #   one for visual
+    #   one for damage (since damaging an enemy removes the entity)
+
+    # visual component
+    world.create_entity(
+        BoundingBox(rect=explosion_rect),
+        Renderable(image=image, order=RenderableOrder.Objects),
+        TimeToLive(duration=250.0),
+    )
+
+    # damage component
+    world.create_entity(
+        BoundingBox(rect=explosion_rect),
+        Renderable(image=image, order=RenderableOrder.Objects),
+        DamagesEnemy(damage=missile.damage, pierced_count=9999),
+    )
+
 
 def create_flame(
     world: esper.World, turret_ent: int, enemy_ent: int, *, assets: Assets
@@ -178,11 +272,11 @@ def create_flame(
     flame_rect.center = (flame_center.x, flame_center.y)
 
     return world.create_entity(
-        # TODO flames should spawn from outside turret, not inside
         BoundingBox(rect=flame_rect, rotation=vec),
         DamagesEnemy(damage=1),
         Renderable(image=image, order=RenderableOrder.Objects),
         Velocity(vec=vec),
+        RemoveOnOutOfBounds(),
     )
 
 
@@ -197,6 +291,7 @@ def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int):
     return world.create_entity(
         BoundingBox(rect=Rect(enemy_bbox.rect.center, bullet_size)),
         DamagesEnemy(damage=1),
+        RemoveOnOutOfBounds(),
     )
 
 

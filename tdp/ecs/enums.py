@@ -38,7 +38,9 @@ class TurretState(enum.IntEnum):
     Idle = enum.auto()
     Tracking = enum.auto()
     Firing = enum.auto()
+    # TODO animation should not be part of the turret state
     FiringAnimation = enum.auto()
+    Reloading = enum.auto()
 
 
 class EnemyKind(enum.IntEnum):

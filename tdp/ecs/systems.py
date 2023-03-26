@@ -16,6 +16,9 @@ from .components import (
     Lifetime,
     PlayerInputMachine,
     PlayerResources,
+    RemoveOnOutOfBounds,
+    RocketMissile,
+    TimeToLive,
     TurretMachine,
     Velocity,
     Spawning,
@@ -29,6 +32,8 @@ from .entities import (
     fire_turret,
     create_flame_turret,
     create_bullet_turret,
+    create_rocket_turret,
+    create_missile_explosion,
     kill_enemy,
     spawn_grunt,
     spawn_tank,
@@ -60,6 +65,8 @@ logger = logging.getLogger(__name__)
 def add_systems(world: esper.World):
     world.add_processor(PlayerResourcesProcessor())
     world.add_processor(TurretStateProcessor())
+    world.add_processor(RocketMissileProcessor())
+    world.add_processor(TimeToLiveProcessor())
     world.add_processor(MovementProcessor())
     world.add_processor(RotationProcessor())
     world.add_processor(SpawningProcessor())
@@ -154,15 +161,14 @@ class RenderingProcessor(esper.Processor):
 
 class OutOfBoundsProcessor(esper.Processor):
     def process(self, *args, **kwargs):
-        # TODO create OutOfBounds component?
-        # cleanup: when bullet leaves world boundaries
         screen_rect = Rect((0, 0), (MAP_WIDTH, MAP_HEIGHT))
-        for damaging_ent, (damages_enemy, damaging_bbox) in self.world.get_components(
-            DamagesEnemy, BoundingBox
+
+        for ent, (_, bbox) in self.world.get_components(
+            RemoveOnOutOfBounds, BoundingBox
         ):
-            if not damaging_bbox.rect.colliderect(screen_rect):
-                logger.info("Entity out of bounds id=%d", damaging_ent)
-                self.world.delete_entity(damaging_ent)
+            if not bbox.rect.colliderect(screen_rect):
+                logger.info("Entity out of bounds id=%d", ent)
+                self.world.delete_entity(ent)
 
 
 class DamagesEnemyProcessor(esper.Processor):
@@ -184,9 +190,12 @@ class DamagesEnemyProcessor(esper.Processor):
 
                         kill_enemy(self.world, enemy_ent)
 
-                    self.world.delete_entity(damaging_ent)
+                    damages_enemy.pierced_count += 1
 
-                    break
+                    if damages_enemy.expired:
+                        self.world.delete_entity(damaging_ent)
+
+                        break
 
 
 class PlayerInputProcessor(esper.Processor):
@@ -391,6 +400,10 @@ class TurretStateProcessor(esper.Processor):
 
                 case TurretState.FiringAnimation:
                     if turret_machine.finished_firing_animation:
+                        turret_machine.state = TurretState.Reloading
+
+                case TurretState.Reloading:
+                    if turret_machine.finished_reloading:
                         turret_machine.state = TurretState.Tracking
 
                 case TurretState.Firing:
@@ -444,10 +457,16 @@ class TurretStateProcessor(esper.Processor):
                     renderable.image = (
                         renderable.original_image
                     ) = assets.bullet_turret__firing
+                case (TurretKind.Rocket, TurretState.Reloading):
+                    renderable.image = (
+                        renderable.original_image
+                    ) = assets.rocket_turret__reloading
                 case (TurretKind.Bullet, _):
                     renderable.image = renderable.original_image = assets.bullet_turret
                 case (TurretKind.Flame, _):
                     renderable.image = renderable.original_image = assets.flame_turret
+                case (TurretKind.Rocket, _):
+                    renderable.image = renderable.original_image = assets.rocket_turret
 
 
 class PlayerResourcesProcessor(esper.Processor):
@@ -456,3 +475,39 @@ class PlayerResourcesProcessor(esper.Processor):
         player_resources = self.world.get_component(PlayerResources)[0][1]
 
         gui_elements.resources_label.set_text(f"Money: ${player_resources.money}")
+
+
+class RocketMissileProcessor(esper.Processor):
+    def process(self, *args, assets: Assets, **kwargs):
+        for missile_ent, (missile, missile_bbox) in self.world.get_components(
+            RocketMissile, BoundingBox
+        ):
+            for enemy_ent, (enemy, enemy_bbox) in self.world.get_components(
+                Enemy, BoundingBox
+            ):
+                if missile_bbox.rect.colliderect(enemy_bbox.rect):
+                    logger.debug("Missile explosion id=%d", missile_ent)
+
+                    # TODO could make missile explosion location better
+                    create_missile_explosion(
+                        self.world, missile, missile_bbox, assets=assets
+                    )
+
+                    self.world.delete_entity(missile_ent)
+
+                    break
+
+
+class TimeToLiveProcessor(esper.Processor):
+    def process(self, *args, delta: float, **kwargs):
+        for ent, time_to_live in self.world.get_component(TimeToLive):
+            time_to_live.elapsed += delta
+
+            if time_to_live.expired:
+                self.world.delete_entity(ent)
+
+
+# TODO TransformationProcessor
+class FadeOutProcessor(esper.Processor):
+    def process(self, *args, delta: float, **kwargs):
+        pass
