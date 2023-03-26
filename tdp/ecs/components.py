@@ -6,10 +6,10 @@ from .enums import (
     RenderableOrder,
     ScoreEventKind,
     TurretState,
-    EnemyKind,
     TurretKind,
     PlayerInputState,
 )
+from .types import SpawningWaveStep
 
 
 @dataclasses.dataclass
@@ -36,15 +36,21 @@ class Enemy:
 
 @dataclasses.dataclass
 class SpawningWave:
-    wave: list[EnemyKind]
+    wave: list[SpawningWaveStep]
+    total_enemy_spawns: int
+
+    enemy_spawn_count: int = 0
     current_index: int = 0
 
-    def get_and_advance(self):
-        enemy_kind = self.wave[self.current_index]
+    elapsed: float = 0.0
 
+    def advance(self):
         self.current_index += 1
+        self.elapsed = 0.0
 
-        return enemy_kind
+    @property
+    def current_step(self):
+        return self.wave[self.current_index]
 
     @property
     def over(self):
@@ -52,15 +58,13 @@ class SpawningWave:
 
     @property
     def progress(self):
-        return int(100.0 * self.current_index / len(self.wave))
+        return int(100.0 * self.enemy_spawn_count / self.total_enemy_spawns)
 
 
 @dataclasses.dataclass
 class Spawning:
     waves: list[SpawningWave]
     current_wave_index: int = 0
-    rate: float = 0.0
-    elapsed: float = 0.0
 
     def advance(self):
         self.current_wave_index += 1
@@ -72,13 +76,6 @@ class Spawning:
     @property
     def current_wave_num(self):
         return self.current_wave_index + 1
-
-    @property
-    def every(self):
-        """
-        How many seconds delay between spawns
-        """
-        return 1.0 / self.rate
 
 
 class Despawning:

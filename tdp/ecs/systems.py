@@ -45,6 +45,7 @@ from .enums import (
     ScoreEventKind,
     InputEventKind,
     PlayerActionKind,
+    SpawningWaveStepKind,
     TurretKind,
     TurretState,
 )
@@ -101,24 +102,29 @@ class SpawningProcessor(esper.Processor):
 
         wave = spawning.current_wave
 
-        spawning.elapsed += delta
+        current_step = wave.current_step
 
-        # spawn, if necessary
-        if spawning.elapsed > spawning.every:
-            enemy_kind = wave.get_and_advance()
+        match current_step:
+            case {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": enemy_kind}:
+                match enemy_kind:
+                    case EnemyKind.Grunt:
+                        enemy = spawn_grunt(self.world, spawning_ent, assets=assets)
+                    case EnemyKind.Tank:
+                        enemy = spawn_tank(self.world, spawning_ent, assets=assets)
 
-            if wave.over:
-                spawning.advance()
+                wave.enemy_spawn_count += 1
+                wave.advance()
 
-            match enemy_kind:
-                case EnemyKind.Grunt:
-                    enemy = spawn_grunt(self.world, spawning_ent, assets=assets)
-                case EnemyKind.Tank:
-                    enemy = spawn_tank(self.world, spawning_ent, assets=assets)
+                logger.info("Spawned new enemy id=%d", enemy)
 
-            logger.info("Spawned new enemy id=%d", enemy)
+            case {"kind": SpawningWaveStepKind.Wait, "duration": duration}:
+                wave.elapsed += delta
 
-            spawning.elapsed = 0.0
+                if wave.elapsed >= duration:
+                    wave.advance()
+
+        if wave.over:
+            spawning.advance()
 
         # update ui
         gui_elements.wave_label.set_text(f"Wave {spawning.current_wave_num}")

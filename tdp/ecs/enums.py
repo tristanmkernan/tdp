@@ -57,3 +57,8 @@ class TurretKind(enum.IntEnum):
 class PlayerInputState(enum.IntEnum):
     Idle = enum.auto()
     BuildingTurret = enum.auto()
+
+
+class SpawningWaveStepKind(enum.IntEnum):
+    SpawnEnemy = enum.auto()
+    Wait = enum.auto()

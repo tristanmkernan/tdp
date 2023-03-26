@@ -1,6 +1,6 @@
 from typing import NotRequired, TypedDict
 
-from .enums import PlayerActionKind, TurretKind
+from .enums import EnemyKind, PlayerActionKind, SpawningWaveStepKind, TurretKind
 
 
 class PlayerAction(TypedDict):
@@ -8,3 +8,10 @@ class PlayerAction(TypedDict):
 
     ent: NotRequired[int]
     turret_kind: NotRequired[TurretKind]
+
+
+class SpawningWaveStep(TypedDict):
+    kind: SpawningWaveStepKind
+
+    enemy_kind: NotRequired[EnemyKind]
+    duration: NotRequired[float]

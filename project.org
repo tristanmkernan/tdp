@@ -2,8 +2,10 @@
 
 * Todo
 
-- [ ] Improve wave generation
+- [X] Improve wave generation
+- [ ] Multiple enemy paths / wave configurations
 - [ ] Enemy health bars
+- [ ] Rocket turret reload progress bar
 - [ ] Turret upgrades
 - [ ] Status effects
   - [ ] On fire + visual effects
@@ -16,8 +18,8 @@
   - [ ] High scores
   - [ ] Game over
   - [ ] Map selection
-- [ ] More turret types
-  - [ ] Rocket
+- [-] More turret types [1/3]
+  - [X] Rocket
   - [ ] Freezing
   - [ ] Slowing
 - [ ] Damage should be dynamic
@@ -26,3 +28,14 @@
   - Skull fades out over time
 - [ ] Transformation system
   - Combines all potential transformations, like fade in/out, grow/shrink, rotate
+- [ ] Turret selection
+  - [ ] Turret range indicators
+  - [ ] Turret upgrades
+  - [ ] Turret details
+    - Should we use the floating ui panel for this?
+- [ ] Fix unit pathing
+  - Units seem to turn right as they approach a path marker
+- [ ] Damage and health balancing
+- [ ] Spawning config should support enemy health modifiers
+  - Maybe health generally increases over time?
+  - Or just stick to different unit types
