@@ -30,10 +30,9 @@ from .components import (
     Despawnable,
     Despawning,
     VelocityAdjustment,
-    Flame,
 )
 from .entities import (
-    apply_burning_effect_to_enemy,
+    apply_damage_effects_to_enemy,
     fire_turret,
     create_flame_turret,
     create_bullet_turret,
@@ -212,6 +211,8 @@ class OutOfBoundsProcessor(esper.Processor):
                 self.world.delete_entity(ent)
 
 
+# TODO refactor to EnemyCollisionProcessor
+# applying Damage is just another CollisionEffect
 class DamagesEnemyProcessor(esper.Processor):
     def process(self, *args, **kwargs):
         for damaging_ent, (damages_enemy, damaging_bbox) in self.world.get_components(
@@ -230,6 +231,10 @@ class DamagesEnemyProcessor(esper.Processor):
                         track_score_event(self.world, ScoreEventKind.EnemyKill)
 
                         kill_enemy(self.world, enemy_ent)
+                    elif damages_enemy.applies_effects:
+                        apply_damage_effects_to_enemy(
+                            self.world, damages_enemy.effects, enemy_ent
+                        )
 
                     damages_enemy.pierced_count += 1
 
@@ -559,21 +564,18 @@ class FadeOutProcessor(esper.Processor):
 
 
 class BurningProcessor(esper.Processor):
-    def process(self, *args, **kwargs):
-        # set burning status
-        for flame_ent, (flame, flame_bbox) in self.world.get_components(
-            Flame, BoundingBox
-        ):
-            for enemy_ent, (
-                enemy,
-                enemy_bbox,
-            ) in self.world.get_components(Enemy, BoundingBox):
-                if flame_bbox.rect.colliderect(enemy_bbox.rect):
-                    logger.debug("Burning entity id=%d", enemy_ent)
+    def process(self, *args, delta: float, **kwargs):
+        for enemy_ent, (enemy, burning) in self.world.get_components(Enemy, Burning):
+            burning.elapsed += delta
 
-                    apply_burning_effect_to_enemy(self.world, flame, enemy_ent)
+            if burning.tick_due:
+                # TODO DRY take damage / delete entity
+                enemy.take_damage(burning.damage)
 
-        # TODO also should handle the Burning effect damage and timer
+                if enemy.is_dead:
+                    self.world.delete_entity(enemy_ent)
+
+                burning.ticks += 1
 
 
 class EnemyStatusVisualEffectProcessor(esper.Processor):
@@ -592,7 +594,9 @@ class EnemyStatusVisualEffectProcessor(esper.Processor):
                 (health_bar_full_width, health_bar_height), pygame.SRCALPHA
             )
 
-            health_bar_filled_width = int(health_bar_full_width * enemy.health_ratio)
+            health_bar_filled_width = int(
+                health_bar_full_width * enemy.health_ratio / 100.0
+            )
             health_bar_filled = pygame.Surface(
                 (health_bar_filled_width, health_bar_height)
             )

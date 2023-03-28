@@ -87,3 +87,4 @@ class DamagesEnemyOnCollisionBehavior(enum.IntEnum):
 
 class DamagesEnemyEffectKind(enum.IntEnum):
     AddsComponent = enum.auto()
+    CreatesEntity = enum.auto()

@@ -122,6 +122,8 @@ class DamagesEnemyEffect:
 
     component: Any | None = None
 
+    components: list[Any] | None = None
+
 
 @dataclasses.dataclass
 class DamagesEnemy:
@@ -282,10 +284,6 @@ class FadeOut:
         return max(0.0, self.elapsed / self.duration)
 
 
-class Flame:
-    pass
-
-
 @dataclasses.dataclass
 class Burning:
     damage: int
@@ -293,4 +291,13 @@ class Burning:
 
     duration: float
 
+    ticks: int = 0
     elapsed: float = 0.0
+
+    @property
+    def tick_due(self):
+        return self.elapsed >= (self.ticks + 1) * self.damage_tick_rate
+
+    @property
+    def expired(self):
+        return self.elapsed >= self.duration

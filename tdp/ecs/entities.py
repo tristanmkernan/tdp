@@ -12,9 +12,9 @@ from .components import (
     BoundingBox,
     Burning,
     DamagesEnemy,
+    DamagesEnemyEffect,
     Despawnable,
     Enemy,
-    Flame,
     PathGraph,
     PlayerInputMachine,
     PlayerResources,
@@ -30,6 +30,7 @@ from .components import (
     FadeOut,
 )
 from .enums import (
+    DamagesEnemyEffectKind,
     DamagesEnemyOnCollisionBehavior,
     RenderableExtraKind,
     RenderableExtraOrder,
@@ -55,7 +56,7 @@ def spawn_tank(world: esper.World, spawn_point: int, *, assets: Assets):
 
 
 def spawn_grunt(world: esper.World, spawn_point: int, *, assets: Assets):
-    return spawn_enemy(world, spawn_point, assets.grunt, bounty=5, max_health=100)
+    return spawn_enemy(world, spawn_point, assets.grunt, bounty=5, max_health=5)
 
 
 def spawn_enemy(
@@ -291,15 +292,34 @@ def create_flame(
         Renderable(image=image, order=RenderableOrder.Objects),
         Velocity(vec=vec),
         RemoveOnOutOfBounds(),
-        Flame(),
+        DamagesEnemy(
+            damage=0,
+            effects=[
+                DamagesEnemyEffect(
+                    kind=DamagesEnemyEffectKind.AddsComponent,
+                    component=Burning(
+                        damage=1, damage_tick_rate=250.0, duration=1_000.0
+                    ),
+                )
+            ],
+        ),
     )
 
 
-def apply_burning_effect_to_enemy(world: esper.World, flame: Flame, enemy_ent: int):
-    # TODO configurable duration / damage
-    world.add_component(
-        enemy_ent, Burning(duration=1_000.0, damage=1, damage_tick_rate=250.0)
-    )
+def apply_damage_effects_to_enemy(
+    world: esper.World, effects: list[DamagesEnemyEffect], enemy_ent: int
+):
+    for effect in effects:
+        match effect:
+            case DamagesEnemyEffect(
+                kind=DamagesEnemyEffectKind.AddsComponent, component=component
+            ):
+                world.add_component(enemy_ent, component)
+            case DamagesEnemyEffect(
+                kind=DamagesEnemyEffectKind.CreatesEntity, components=components
+            ):
+                # TODO not quite right, probably needs to be dynamic
+                world.create_entity(components)
 
 
 def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int):
