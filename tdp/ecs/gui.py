@@ -11,6 +11,9 @@ from .resources import TURRET_BUILD_COSTS
 
 @dataclasses.dataclass
 class GuiElements:
+    panel: pygame_gui.elements.UIPanel
+    title: pygame_gui.elements.UILabel
+
     resources_label: pygame_gui.elements.UILabel
 
     wave_label: pygame_gui.elements.UILabel
@@ -97,6 +100,8 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
     # TODO selected turret ui (upgrades)
 
     return GuiElements(
+        panel=panel,
+        title=title,
         resources_label=resources_label,
         wave_label=wave_label,
         wave_progress=wave_progress,
@@ -105,3 +110,9 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
         rocket_turret_build_button=rocket_turret_build_button,
         clear_turret_build_button=clear_turret_build_button,
     )
+
+
+def cleanup_gui(gui_elements: GuiElements):
+    for field in dataclasses.fields(gui_elements):
+        if gui_elem := getattr(gui_elements, field.name, None):
+            gui_elem.kill()

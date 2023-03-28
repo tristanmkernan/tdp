@@ -39,3 +39,9 @@
 - [ ] Spawning config should support enemy health modifiers
   - Maybe health generally increases over time?
   - Or just stick to different unit types
+
+* Bugs
+
+- [ ] Burning component is replaced, meaning that units don't take damage while repeatedly being hit
+- [ ] Flame turret flames should have limited lifespan / range
+  - It's odd that the flames can travel across the map
