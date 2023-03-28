@@ -4,11 +4,11 @@
 
 - [X] Improve wave generation
 - [ ] Multiple enemy paths / wave configurations
-- [ ] Enemy health bars
+- [X] Enemy health bars
 - [ ] Rocket turret reload progress bar
 - [ ] Turret upgrades
-- [ ] Status effects
-  - [ ] On fire + visual effects
+- [-] Status effects
+  - [X] On fire
   - [ ] Slow or frozen + visual effects
 - [ ] More enemy types
 - [ ] Smart enemies

@@ -19,6 +19,8 @@ class Assets:
     rocket_missile: pygame.Surface
     rocket_missile_explosion: pygame.Surface
 
+    burning_status_effect: pygame.Surface
+
 
 def load_assets() -> Assets:
     return Assets(
@@ -36,4 +38,5 @@ def load_assets() -> Assets:
         rocket_missile_explosion=pygame.image.load(
             "assets/turrets/rocket-missile-explosion.png"
         ),
+        burning_status_effect=pygame.image.load("assets/enemies/status/burning.png"),
     )

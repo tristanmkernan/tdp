@@ -10,12 +10,15 @@ from ..constants import PLAYER_STARTING_MONEY
 from .assets import Assets
 from .components import (
     BoundingBox,
+    Burning,
     DamagesEnemy,
     Despawnable,
     Enemy,
+    Flame,
     PathGraph,
     PlayerInputMachine,
     PlayerResources,
+    RenderableExtra,
     ScoreTracker,
     TurretMachine,
     UnitPathing,
@@ -28,6 +31,8 @@ from .components import (
 )
 from .enums import (
     DamagesEnemyOnCollisionBehavior,
+    RenderableExtraKind,
+    RenderableExtraOrder,
     RenderableOrder,
     ScoreEventKind,
     TurretKind,
@@ -50,7 +55,7 @@ def spawn_tank(world: esper.World, spawn_point: int, *, assets: Assets):
 
 
 def spawn_grunt(world: esper.World, spawn_point: int, *, assets: Assets):
-    return spawn_enemy(world, spawn_point, assets.grunt, bounty=5, max_health=2)
+    return spawn_enemy(world, spawn_point, assets.grunt, bounty=5, max_health=100)
 
 
 def spawn_enemy(
@@ -76,7 +81,23 @@ def spawn_enemy(
                 image_rect.height,
             )
         ),
-        Renderable(order=RenderableOrder.Objects, image=image),
+        Renderable(
+            order=RenderableOrder.Objects,
+            image=image,
+            # not a huge fan that this is initialized like this
+            extras={
+                RenderableExtraKind.StatusEffectBar: RenderableExtra(
+                    image=pygame.Surface((0, 0)),
+                    rect=pygame.Rect(0, 0, 0, 0),
+                    order=RenderableExtraOrder.Over,
+                ),
+                RenderableExtraKind.HealthBar: RenderableExtra(
+                    image=pygame.Surface((0, 0)),
+                    rect=pygame.Rect(0, 0, 0, 0),
+                    order=RenderableExtraOrder.Over,
+                ),
+            },
+        ),
         Despawnable(),
         UnitPathing(vertices=spawn_path_graph.vertices),
     )
@@ -267,10 +288,17 @@ def create_flame(
 
     return world.create_entity(
         BoundingBox(rect=flame_rect, rotation=vec),
-        DamagesEnemy(damage=1),
         Renderable(image=image, order=RenderableOrder.Objects),
         Velocity(vec=vec),
         RemoveOnOutOfBounds(),
+        Flame(),
+    )
+
+
+def apply_burning_effect_to_enemy(world: esper.World, flame: Flame, enemy_ent: int):
+    # TODO configurable duration / damage
+    world.add_component(
+        enemy_ent, Burning(duration=1_000.0, damage=1, damage_tick_rate=250.0)
     )
 
 

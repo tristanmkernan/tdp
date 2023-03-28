@@ -11,12 +11,14 @@ from .gui import GuiElements
 from .types import PlayerAction
 from .components import (
     BoundingBox,
+    Burning,
     DamagesEnemy,
     Enemy,
     Lifetime,
     PlayerInputMachine,
     PlayerResources,
     RemoveOnOutOfBounds,
+    RenderableExtra,
     RocketMissile,
     TimeToLive,
     TurretMachine,
@@ -28,8 +30,10 @@ from .components import (
     Despawnable,
     Despawning,
     VelocityAdjustment,
+    Flame,
 )
 from .entities import (
+    apply_burning_effect_to_enemy,
     fire_turret,
     create_flame_turret,
     create_bullet_turret,
@@ -44,6 +48,8 @@ from .enums import (
     DamagesEnemyOnCollisionBehavior,
     EnemyKind,
     PlayerInputState,
+    RenderableExtraKind,
+    RenderableExtraOrder,
     ScoreEventKind,
     InputEventKind,
     PlayerActionKind,
@@ -52,6 +58,7 @@ from .enums import (
     TurretState,
     VelocityAdjustmentKind,
 )
+from .rendering import render_composite, render_simple
 from .resources import (
     player_has_resources_to_build_turret,
     subtract_resources_to_build_turret,
@@ -70,6 +77,8 @@ def add_systems(world: esper.World):
     world.add_processor(PlayerResourcesProcessor())
     world.add_processor(TurretStateProcessor())
     world.add_processor(RocketMissileProcessor())
+    world.add_processor(BurningProcessor())
+    world.add_processor(EnemyStatusVisualEffectProcessor())
     world.add_processor(TimeToLiveProcessor())
     world.add_processor(MovementProcessor())
     world.add_processor(RotationProcessor())
@@ -169,6 +178,10 @@ class RenderingProcessor(esper.Processor):
         renderables = sorted(renderables, key=lambda item: item[1][0].order)
 
         for _, (renderable, bbox) in renderables:
+            if renderable.composite:
+                render_composite(screen, renderable, bbox)
+            else:
+                render_simple(screen, renderable, bbox)
             screen.blit(renderable.image, bbox.rect.topleft)
 
             # render bounding box in debug mode
@@ -543,3 +556,78 @@ class TimeToLiveProcessor(esper.Processor):
 class FadeOutProcessor(esper.Processor):
     def process(self, *args, delta: float, **kwargs):
         pass
+
+
+class BurningProcessor(esper.Processor):
+    def process(self, *args, **kwargs):
+        # set burning status
+        for flame_ent, (flame, flame_bbox) in self.world.get_components(
+            Flame, BoundingBox
+        ):
+            for enemy_ent, (
+                enemy,
+                enemy_bbox,
+            ) in self.world.get_components(Enemy, BoundingBox):
+                if flame_bbox.rect.colliderect(enemy_bbox.rect):
+                    logger.debug("Burning entity id=%d", enemy_ent)
+
+                    apply_burning_effect_to_enemy(self.world, flame, enemy_ent)
+
+        # TODO also should handle the Burning effect damage and timer
+
+
+class EnemyStatusVisualEffectProcessor(esper.Processor):
+    def process(self, *args, assets: Assets, **kwargs):
+        for enemy_ent, (enemy, bbox, renderable) in self.world.get_components(
+            Enemy, BoundingBox, Renderable
+        ):
+            # health bar
+            health_bar_extra_renderable = renderable.extras[
+                RenderableExtraKind.HealthBar
+            ]
+
+            health_bar_height = 4
+            health_bar_full_width = 32
+            health_bar_image = pygame.Surface(
+                (health_bar_full_width, health_bar_height), pygame.SRCALPHA
+            )
+
+            health_bar_filled_width = int(health_bar_full_width * enemy.health_ratio)
+            health_bar_filled = pygame.Surface(
+                (health_bar_filled_width, health_bar_height)
+            )
+            health_bar_filled.fill(("#ff0006"))
+
+            health_bar_image.blit(health_bar_filled, (0, 0))
+
+            ## positioned on top of enemy with margin
+            health_bar_rect = health_bar_image.get_rect()
+            health_bar_rect.bottomleft = bbox.rect.topleft
+            health_bar_rect.top -= 8
+
+            health_bar_extra_renderable.image = health_bar_image
+            health_bar_extra_renderable.order = RenderableExtraOrder.Over
+            health_bar_extra_renderable.rect = health_bar_rect
+
+            # status effect bar
+            status_effect_extra_renderable = renderable.extras[
+                RenderableExtraKind.StatusEffectBar
+            ]
+
+            status_effect_image = pygame.Surface((80, 18), pygame.SRCALPHA)
+
+            if self.world.has_component(enemy_ent, Burning):
+                status_effect_image.blit(assets.burning_status_effect, (0, 0))
+
+            # TODO
+            # if self.world.has_component(enemy_ent, Slowed):
+            #     status_effect_image.blit(assets.slowed_status_effect, (0, 0))
+
+            ## positioned on top of enemy, with margin
+            status_effect_rect = status_effect_image.get_rect()
+            status_effect_rect.bottomleft = bbox.rect.topleft
+            status_effect_rect.top -= 12 + health_bar_height
+
+            status_effect_extra_renderable.image = status_effect_image
+            status_effect_extra_renderable.order = RenderableExtraOrder.Over
+            status_effect_extra_renderable.rect = status_effect_rect

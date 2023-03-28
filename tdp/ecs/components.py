@@ -1,15 +1,20 @@
 import dataclasses
 
+from typing import Any
+
 from pygame import Rect, Vector2, Surface
 
 from .enums import (
     DamagesEnemyOnCollisionBehavior,
+    RenderableExtraKind,
+    RenderableExtraOrder,
     RenderableOrder,
     ScoreEventKind,
     TurretState,
     TurretKind,
     PlayerInputState,
     VelocityAdjustmentKind,
+    DamagesEnemyEffectKind,
 )
 from .types import SpawningWaveStep
 
@@ -112,8 +117,16 @@ class Velocity:
 
 
 @dataclasses.dataclass
+class DamagesEnemyEffect:
+    kind: DamagesEnemyEffectKind
+
+    component: Any | None = None
+
+
+@dataclasses.dataclass
 class DamagesEnemy:
     damage: int
+
     on_collision_behavior: DamagesEnemyOnCollisionBehavior = (
         DamagesEnemyOnCollisionBehavior.DeleteEntity
     )
@@ -122,9 +135,15 @@ class DamagesEnemy:
     pierces: int = 1
     pierced_count: int = 0
 
+    effects: list[DamagesEnemyEffect] = dataclasses.field(default_factory=list)
+
     @property
     def expired(self):
         return self.pierced_count >= self.pierces
+
+    @property
+    def applies_effects(self):
+        return bool(self.effects)
 
 
 @dataclasses.dataclass
@@ -143,14 +162,29 @@ class PlayerInputMachine:
 
 
 @dataclasses.dataclass
+class RenderableExtra:
+    image: Surface
+    rect: Rect
+    order: RenderableExtraOrder
+
+
+@dataclasses.dataclass
 class Renderable:
     image: Surface
     order: RenderableOrder
+
+    extras: dict[RenderableExtraKind, RenderableExtra] = dataclasses.field(
+        default_factory=dict
+    )
 
     original_image: Surface = dataclasses.field(init=False)
 
     def __post_init__(self):
         self.original_image = self.image
+
+    @property
+    def composite(self):
+        return bool(self.extras)
 
 
 @dataclasses.dataclass
@@ -246,3 +280,17 @@ class FadeOut:
         Percent complete
         """
         return max(0.0, self.elapsed / self.duration)
+
+
+class Flame:
+    pass
+
+
+@dataclasses.dataclass
+class Burning:
+    damage: int
+    damage_tick_rate: float
+
+    duration: float
+
+    elapsed: float = 0.0

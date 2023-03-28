@@ -23,6 +23,17 @@ class PlayerActionKind(enum.IntEnum):
     ClearTurretToBuild = enum.auto()
 
 
+class RenderableExtraOrder(enum.IntEnum):
+    Under = -1
+    Over = 1
+
+
+class RenderableExtraKind(enum.IntEnum):
+    TurretBase = enum.auto()
+    HealthBar = enum.auto()
+    StatusEffectBar = enum.auto()
+
+
 class RenderableOrder(enum.IntEnum):
     Base = enum.auto()
     Environment = enum.auto()
@@ -72,3 +83,7 @@ class VelocityAdjustmentKind(enum.IntEnum):
 class DamagesEnemyOnCollisionBehavior(enum.IntEnum):
     DeleteEntity = enum.auto()
     RemoveComponent = enum.auto()
+
+
+class DamagesEnemyEffectKind(enum.IntEnum):
+    AddsComponent = enum.auto()
