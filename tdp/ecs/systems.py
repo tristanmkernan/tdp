@@ -40,6 +40,7 @@ from .entities import (
     kill_enemy,
     spawn_grunt,
     spawn_tank,
+    sync_selected_turret_range_extra_renderable,
     track_score_event,
     upgrade_turret,
 )
@@ -284,6 +285,7 @@ class PlayerInputProcessor(esper.Processor):
                 PlayerActionKind.SelectTurret,
             },
             PlayerInputState.SelectingTurret: {
+                PlayerActionKind.SelectTurret,
                 PlayerActionKind.UpgradeTurretProperty,
                 PlayerActionKind.SetTurretToBuild,
             },
@@ -406,6 +408,12 @@ class PlayerInputProcessor(esper.Processor):
                 # update selected turret ui
                 sync_selected_turret_gui(
                     self.world, player_input_machine.selected_turret, gui_elements
+                )
+
+                # sync range ring extra renderable for turret
+                sync_selected_turret_range_extra_renderable(
+                    self.world,
+                    player_input_machine.selected_turret,
                 )
 
                 gui_elements.selected_turret_panel.show()

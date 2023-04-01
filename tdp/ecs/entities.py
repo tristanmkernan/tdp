@@ -88,19 +88,6 @@ def spawn_enemy(
         Renderable(
             order=RenderableOrder.Objects,
             image=image,
-            # not a huge fan that this is initialized like this
-            extras={
-                RenderableExtraKind.StatusEffectBar: RenderableExtra(
-                    image=pygame.Surface((0, 0)),
-                    rect=pygame.Rect(0, 0, 0, 0),
-                    order=RenderableExtraOrder.Over,
-                ),
-                RenderableExtraKind.HealthBar: RenderableExtra(
-                    image=pygame.Surface((0, 0)),
-                    rect=pygame.Rect(0, 0, 0, 0),
-                    order=RenderableExtraOrder.Over,
-                ),
-            },
         ),
         Despawnable(),
         UnitPathing(vertices=spawn_path_graph.vertices),
@@ -507,3 +494,39 @@ def upgrade_turret(
     turret = world.component_for_entity(turret_ent, TurretMachine)
 
     turret.upgrade_levels[turret_property] += 1
+
+
+def sync_selected_turret_range_extra_renderable(
+    world: esper.World,
+    turret_ent: int,
+) -> None:
+    # hide all other range extra renderables
+    for _, (_, other_renderable) in world.get_components(TurretMachine, Renderable):
+        other_renderable.extras.pop(RenderableExtraKind.TurretRange, None)
+
+    turret_machine = world.component_for_entity(turret_ent, TurretMachine)
+    renderable = world.component_for_entity(turret_ent, Renderable)
+    bbox = world.component_for_entity(turret_ent, BoundingBox)
+
+    range_extra_renderable = renderable.extras[RenderableExtraKind.TurretRange]
+
+    range = turret_machine.range
+    range_image_dim = range * 2 + 20
+
+    range_image = pygame.Surface((range_image_dim, range_image_dim), pygame.SRCALPHA)
+
+    pygame.draw.circle(
+        range_image,
+        "#ff3300",
+        (range_image_dim / 2, range_image_dim / 2),
+        range,
+        width=2,
+    )
+
+    # positioned centered on turret
+    range_rect = range_image.get_rect()
+    range_rect.center = bbox.rect.center
+
+    range_extra_renderable.image = range_image
+    range_extra_renderable.order = RenderableExtraOrder.Over
+    range_extra_renderable.rect = range_rect

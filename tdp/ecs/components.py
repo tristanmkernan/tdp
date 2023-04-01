@@ -1,3 +1,4 @@
+from collections import defaultdict
 import dataclasses
 
 from typing import Any, Protocol
@@ -182,13 +183,21 @@ class RenderableExtra:
     order: RenderableExtraOrder
 
 
+def empty_extra_renderable_generator():
+    return RenderableExtra(
+        image=Surface((0, 0)),
+        rect=Rect(0, 0, 0, 0),
+        order=RenderableExtraOrder.Over,
+    )
+
+
 @dataclasses.dataclass
 class Renderable:
     image: Surface
     order: RenderableOrder
 
     extras: dict[RenderableExtraKind, RenderableExtra] = dataclasses.field(
-        default_factory=dict
+        default_factory=lambda: defaultdict(empty_extra_renderable_generator)
     )
 
     original_image: Surface = dataclasses.field(init=False)

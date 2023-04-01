@@ -35,6 +35,7 @@ class RenderableExtraKind(enum.IntEnum):
     TurretBase = enum.auto()
     HealthBar = enum.auto()
     StatusEffectBar = enum.auto()
+    TurretRange = enum.auto()
 
 
 class RenderableOrder(enum.IntEnum):
