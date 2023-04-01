@@ -9,6 +9,7 @@ from ..constants import PLAYER_STARTING_MONEY
 
 from .assets import Assets
 from .components import (
+    Animated,
     BoundingBox,
     Burning,
     DamagesEnemy,
@@ -27,7 +28,8 @@ from .components import (
     RocketMissile,
     RemoveOnOutOfBounds,
     TimeToLive,
-    FadeOut,
+    Frozen,
+    FrostMissile,
 )
 from .enums import (
     DamagesEnemyEffectKind,
@@ -140,6 +142,31 @@ def create_flame_turret(world: esper.World, build_zone_ent: int, *, assets: Asse
     )
 
 
+def create_frost_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
+    bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
+
+    image = assets.frost_turret
+    image_rect = image.get_rect()
+
+    bbox = BoundingBox(rect=Rect(image_rect))
+    bbox.rect.center = bz_bbox.rect.center
+
+    # for now, remove build zone entity, but may want to disable instead
+    world.delete_entity(build_zone_ent)
+
+    return world.create_entity(
+        TurretMachine(
+            state=TurretState.Idle,
+            kind=TurretKind.Frost,
+            firing_cooldown=2_000.0,
+            firing_animation_duration=0,
+            range=500,
+        ),
+        bbox,
+        Renderable(image=image, order=RenderableOrder.Objects),
+    )
+
+
 def create_rocket_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
@@ -200,6 +227,9 @@ def fire_turret(
         case TurretKind.Flame:
             create_flame(world, turret_ent, enemy_ent, assets=assets)
 
+        case TurretKind.Frost:
+            create_frost(world, turret_ent, enemy_ent, assets=assets)
+
         case TurretKind.Rocket:
             create_missile(world, turret_ent, enemy_ent, assets=assets)
 
@@ -229,16 +259,28 @@ def create_missile(
         Velocity(vec=vec),
         RocketMissile(damage=15),
         RemoveOnOutOfBounds(),
+        DamagesEnemy(
+            damage=0,
+            effects=[
+                DamagesEnemyEffect(
+                    kind=DamagesEnemyEffectKind.DynamicCreator,
+                    dynamic_effect_creator=create_rocket_missile_explosion,
+                )
+            ],
+        ),
     )
 
 
-def create_missile_explosion(
+def create_rocket_missile_explosion(
     world: esper.World,
-    missile: RocketMissile,
-    missile_bbox: BoundingBox,
+    source_ent: int,
+    enemy_ent: int,
     *,
     assets: Assets,
 ):
+    missile = world.component_for_entity(source_ent, RocketMissile)
+    missile_bbox = world.component_for_entity(source_ent, BoundingBox)
+
     image = assets.rocket_missile_explosion
     image_rect = image.get_rect()
 
@@ -292,6 +334,7 @@ def create_flame(
         Renderable(image=image, order=RenderableOrder.Objects),
         Velocity(vec=vec),
         RemoveOnOutOfBounds(),
+        TimeToLive(duration=500.0),
         DamagesEnemy(
             damage=0,
             effects=[
@@ -306,20 +349,104 @@ def create_flame(
     )
 
 
-def apply_damage_effects_to_enemy(
-    world: esper.World, effects: list[DamagesEnemyEffect], enemy_ent: int
+def create_frost(
+    world: esper.World, turret_ent: int, enemy_ent: int, *, assets: Assets
 ):
-    for effect in effects:
+    turret_bbox = world.component_for_entity(turret_ent, BoundingBox)
+    enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
+
+    animated = Animated(frames=assets.frost_missile_frames, step=50.0)
+
+    image = animated.current_frame
+    image_rect = image.get_rect()
+
+    vec = (
+        Vector2(enemy_bbox.rect.center) - Vector2(turret_bbox.rect.center)
+    ).normalize()
+
+    # from 0.95
+    vec.scale_to_length(0.5)
+
+    # frost should spawn outside turret, not inside
+    # let's adjust position along target vector
+    turret_pos_offset = vec.copy()
+    turret_pos_offset.scale_to_length(64)
+
+    frost_center = Vector2(turret_bbox.rect.center) + turret_pos_offset
+
+    frost_rect = Rect((0, 0), image_rect.size)
+    frost_rect.center = (frost_center.x, frost_center.y)
+
+    return world.create_entity(
+        animated,
+        BoundingBox(rect=frost_rect),
+        Renderable(image=image, order=RenderableOrder.Objects),
+        Velocity(vec=vec),
+        RemoveOnOutOfBounds(),
+        FrostMissile(damage=15),
+        DamagesEnemy(
+            damage=1,
+            effects=[
+                DamagesEnemyEffect(
+                    kind=DamagesEnemyEffectKind.AddsComponent,
+                    component=Frozen(duration=1_000.0),
+                ),
+                DamagesEnemyEffect(
+                    kind=DamagesEnemyEffectKind.DynamicCreator,
+                    dynamic_effect_creator=create_frost_missile_explosion,
+                ),
+            ],
+        ),
+    )
+
+
+def create_frost_missile_explosion(
+    world: esper.World,
+    source_ent: int,
+    enemy_ent: int,
+    *,
+    assets: Assets,
+):
+    frost = world.component_for_entity(source_ent, FrostMissile)
+    frost_bbox = world.component_for_entity(source_ent, BoundingBox)
+
+    animated = Animated(frames=assets.frost_missile_explosion_frames, step=50.0)
+    base_image = animated.current_frame
+    image_rect = base_image.get_rect()
+
+    # explosion should spawn at frost center
+    explosion_rect = Rect((0, 0), image_rect.size)
+    explosion_rect.center = frost_bbox.rect.center
+
+    world.create_entity(
+        animated,
+        BoundingBox(rect=explosion_rect),
+        Renderable(image=base_image, order=RenderableOrder.Objects),
+        TimeToLive(duration=800.0),  # synced with animation
+        DamagesEnemy(
+            damage=frost.damage,
+            pierced_count=9999,
+            on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
+        ),
+    )
+
+
+def apply_damage_effects_to_enemy(
+    world: esper.World, source_ent: int, enemy_ent: int, *, assets: Assets
+):
+    damages_enemy = world.component_for_entity(source_ent, DamagesEnemy)
+
+    for effect in damages_enemy.effects:
         match effect:
             case DamagesEnemyEffect(
                 kind=DamagesEnemyEffectKind.AddsComponent, component=component
             ):
                 world.add_component(enemy_ent, component)
             case DamagesEnemyEffect(
-                kind=DamagesEnemyEffectKind.CreatesEntity, components=components
+                kind=DamagesEnemyEffectKind.DynamicCreator,
+                dynamic_effect_creator=dynamic_effect_creator,
             ):
-                # TODO not quite right, probably needs to be dynamic
-                world.create_entity(components)
+                dynamic_effect_creator(world, source_ent, enemy_ent, assets=assets)
 
 
 def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int):

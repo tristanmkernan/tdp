@@ -10,6 +10,7 @@ from .assets import Assets
 from .gui import GuiElements
 from .types import PlayerAction
 from .components import (
+    Animated,
     BoundingBox,
     Burning,
     DamagesEnemy,
@@ -18,8 +19,6 @@ from .components import (
     PlayerInputMachine,
     PlayerResources,
     RemoveOnOutOfBounds,
-    RenderableExtra,
-    RocketMissile,
     TimeToLive,
     TurretMachine,
     Velocity,
@@ -33,11 +32,11 @@ from .components import (
 )
 from .entities import (
     apply_damage_effects_to_enemy,
+    create_frost_turret,
     fire_turret,
     create_flame_turret,
     create_bullet_turret,
     create_rocket_turret,
-    create_missile_explosion,
     kill_enemy,
     spawn_grunt,
     spawn_tank,
@@ -75,12 +74,11 @@ logger = logging.getLogger(__name__)
 def add_systems(world: esper.World):
     world.add_processor(PlayerResourcesProcessor())
     world.add_processor(TurretStateProcessor())
-    world.add_processor(RocketMissileProcessor())
     world.add_processor(BurningProcessor())
     world.add_processor(EnemyStatusVisualEffectProcessor())
     world.add_processor(TimeToLiveProcessor())
     world.add_processor(MovementProcessor())
-    world.add_processor(RotationProcessor())
+
     world.add_processor(SpawningProcessor())
     world.add_processor(OutOfBoundsProcessor())
     world.add_processor(DamagesEnemyProcessor())
@@ -90,6 +88,8 @@ def add_systems(world: esper.World):
     world.add_processor(PathingProcessor())
     world.add_processor(DespawningProcessor())
 
+    world.add_processor(AnimationProcessor())
+    world.add_processor(RotationProcessor())
     world.add_processor(RenderingProcessor())
 
 
@@ -181,7 +181,6 @@ class RenderingProcessor(esper.Processor):
                 render_composite(screen, renderable, bbox)
             else:
                 render_simple(screen, renderable, bbox)
-            screen.blit(renderable.image, bbox.rect.topleft)
 
             # render bounding box in debug mode
             if debug:
@@ -214,7 +213,7 @@ class OutOfBoundsProcessor(esper.Processor):
 # TODO refactor to EnemyCollisionProcessor
 # applying Damage is just another CollisionEffect
 class DamagesEnemyProcessor(esper.Processor):
-    def process(self, *args, **kwargs):
+    def process(self, *args, assets: Assets, **kwargs):
         for damaging_ent, (damages_enemy, damaging_bbox) in self.world.get_components(
             DamagesEnemy, BoundingBox
         ):
@@ -233,7 +232,7 @@ class DamagesEnemyProcessor(esper.Processor):
                         kill_enemy(self.world, enemy_ent)
                     elif damages_enemy.applies_effects:
                         apply_damage_effects_to_enemy(
-                            self.world, damages_enemy.effects, enemy_ent
+                            self.world, damaging_ent, enemy_ent, assets=assets
                         )
 
                     damages_enemy.pierced_count += 1
@@ -312,6 +311,8 @@ class PlayerInputProcessor(esper.Processor):
                             create_bullet_turret(self.world, ent, assets=assets)
                         case TurretKind.Rocket:
                             create_rocket_turret(self.world, ent, assets=assets)
+                        case TurretKind.Frost:
+                            create_frost_turret(self.world, ent, assets=assets)
 
                     subtract_resources_to_build_turret(
                         self.world, player_input_machine.turret_to_build
@@ -320,11 +321,11 @@ class PlayerInputProcessor(esper.Processor):
                     player_input_machine.turret_to_build = None
                     player_input_machine.state = PlayerInputState.Idle
 
-        # TODO synchronize UI with state
         # maybe add a border (or other visual effect) to the selected turret button
         turret_gui_element_map = {
             TurretKind.Bullet: gui_elements.basic_turret_build_button,
             TurretKind.Flame: gui_elements.flame_turret_build_button,
+            TurretKind.Frost: gui_elements.frost_turret_build_button,
             TurretKind.Rocket: gui_elements.rocket_turret_build_button,
         }
 
@@ -332,21 +333,15 @@ class PlayerInputProcessor(esper.Processor):
             case PlayerInputState.Idle:
                 # reset button classes
                 for gui_button in turret_gui_element_map.values():
-                    # TODO
-                    # gui_button.class_ids = ["@turret-build-button--selected"]
                     gui_button.enable()
             case PlayerInputState.BuildingTurret:
                 # reset button classes
                 for gui_button in turret_gui_element_map.values():
-                    # TODO
-                    # gui_button.class_ids = ["@turret-build-button--selected"]
                     gui_button.enable()
 
                 if gui_button := turret_gui_element_map.get(
                     player_input_machine.turret_to_build
                 ):
-                    # TODO
-                    # gui_button.class_ids = ["@turret-build-button--selected"]
                     gui_button.disable()
 
 
@@ -408,6 +403,7 @@ class DespawningProcessor(esper.Processor):
 
 
 class RotationProcessor(esper.Processor):
+    # TODO need to combine with rendering somehow
     def process(self, *args, **kwargs):
         for _, (renderable, bbox) in self.world.get_components(Renderable, BoundingBox):
             # sync the bbox and rotation
@@ -422,6 +418,22 @@ class RotationProcessor(esper.Processor):
             updated_rect.center = bbox.rect.center
 
             bbox.rect = updated_rect
+
+
+class AnimationProcessor(esper.Processor):
+    # TODO need to combine with rendering somehow
+    # TODO incompatible with rotation right now, unless synced in order?
+    def process(self, *args, delta: float, **kwargs):
+        for _, (animated, renderable) in self.world.get_components(
+            Animated, Renderable
+        ):
+            animated.elapsed += delta
+
+            if animated.frame_expired:
+                animated.advance_frame()
+
+                # not expected that animation changes bbox
+                renderable.original_image = renderable.image = animated.current_frame
 
 
 class TurretStateProcessor(esper.Processor):
@@ -525,27 +537,6 @@ class PlayerResourcesProcessor(esper.Processor):
         player_resources = self.world.get_component(PlayerResources)[0][1]
 
         gui_elements.resources_label.set_text(f"Money: ${player_resources.money}")
-
-
-class RocketMissileProcessor(esper.Processor):
-    def process(self, *args, assets: Assets, **kwargs):
-        for missile_ent, (missile, missile_bbox) in self.world.get_components(
-            RocketMissile, BoundingBox
-        ):
-            for enemy_ent, (enemy, enemy_bbox) in self.world.get_components(
-                Enemy, BoundingBox
-            ):
-                if missile_bbox.rect.colliderect(enemy_bbox.rect):
-                    logger.debug("Missile explosion id=%d", missile_ent)
-
-                    # TODO could make missile explosion location better
-                    create_missile_explosion(
-                        self.world, missile, missile_bbox, assets=assets
-                    )
-
-                    self.world.delete_entity(missile_ent)
-
-                    break
 
 
 class TimeToLiveProcessor(esper.Processor):

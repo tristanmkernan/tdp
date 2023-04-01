@@ -22,6 +22,8 @@ class GuiElements:
     basic_turret_build_button: pygame_gui.elements.UIButton
     flame_turret_build_button: pygame_gui.elements.UIButton
     rocket_turret_build_button: pygame_gui.elements.UIButton
+    frost_turret_build_button: pygame_gui.elements.UIButton
+
     clear_turret_build_button: pygame_gui.elements.UIButton
 
 
@@ -80,8 +82,18 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
         ),
     )
 
-    rocket_turret_build_button = pygame_gui.elements.UIButton(
+    frost_turret_build_button = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((10, 180), (panel_width, 20)),
+        text=f"Frost Turret (${TURRET_BUILD_COSTS[TurretKind.Frost]})",
+        manager=manager,
+        container=panel,
+        object_id=pygame_gui.core.ObjectID(
+            "#frost_turret_build_button", "@turret-build-button--unselected"
+        ),
+    )
+
+    rocket_turret_build_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((10, 200), (panel_width, 20)),
         text=f"Rocket Turret (${TURRET_BUILD_COSTS[TurretKind.Rocket]})",
         manager=manager,
         container=panel,
@@ -91,7 +103,7 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
     )
 
     clear_turret_build_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((10, 210), (panel_width, 20)),
+        relative_rect=pygame.Rect((10, 230), (panel_width, 20)),
         text="Clear",
         manager=manager,
         container=panel,
@@ -107,6 +119,7 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
         wave_progress=wave_progress,
         basic_turret_build_button=basic_turret_build_button,
         flame_turret_build_button=flame_turret_build_button,
+        frost_turret_build_button=frost_turret_build_button,
         rocket_turret_build_button=rocket_turret_build_button,
         clear_turret_build_button=clear_turret_build_button,
     )

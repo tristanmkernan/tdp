@@ -36,6 +36,11 @@ def get_player_action_for_button_press(
                 "kind": PlayerActionKind.SetTurretToBuild,
                 "turret_kind": TurretKind.Flame,
             }
+        case gui_elements.frost_turret_build_button:
+            return {
+                "kind": PlayerActionKind.SetTurretToBuild,
+                "turret_kind": TurretKind.Frost,
+            }
         case gui_elements.rocket_turret_build_button:
             return {
                 "kind": PlayerActionKind.SetTurretToBuild,

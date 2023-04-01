@@ -63,6 +63,7 @@ class TurretKind(enum.IntEnum):
     Bullet = enum.auto()
     Flame = enum.auto()
     Rocket = enum.auto()
+    Frost = enum.auto()
 
 
 class PlayerInputState(enum.IntEnum):
@@ -87,4 +88,4 @@ class DamagesEnemyOnCollisionBehavior(enum.IntEnum):
 
 class DamagesEnemyEffectKind(enum.IntEnum):
     AddsComponent = enum.auto()
-    CreatesEntity = enum.auto()
+    DynamicCreator = enum.auto()

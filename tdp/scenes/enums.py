@@ -1,9 +1,9 @@
 import enum
 
 
-class SceneKind(enum.IntEnum):
-    Main = enum.auto()
-    Game = enum.auto()
+class SceneKind(enum.StrEnum):
+    Main = "main"
+    Game = "game"
 
 
 class SceneEventKind(enum.IntEnum):

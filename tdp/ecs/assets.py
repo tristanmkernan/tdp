@@ -1,6 +1,9 @@
 import dataclasses
+import logging
 
 import pygame
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -13,6 +16,12 @@ class Assets:
 
     flame_turret: pygame.Surface
     flame_particle: pygame.Surface
+
+    frost_turret: pygame.Surface
+    # frost_missile: pygame.Surface
+    frost_missile_frames: list[pygame.Surface]
+    # frost_missile_explosion: pygame.Surface
+    frost_missile_explosion_frames: list[pygame.Surface]
 
     rocket_turret: pygame.Surface
     rocket_turret__reloading: pygame.Surface
@@ -30,6 +39,14 @@ def load_assets() -> Assets:
         bullet_turret__firing=pygame.image.load("assets/turrets/mach1--firing.png"),
         flame_turret=pygame.image.load("assets/turrets/flame1.png"),
         flame_particle=pygame.image.load("assets/turrets/flame-particle.png"),
+        frost_turret=pygame.image.load("assets/turrets/frost1.png"),
+        #        frost_missile=pygame.image.load("assets/turrets/frost-particle.png"),
+        frost_missile_frames=load_sheet_frames(
+            "assets/turrets/frost-missile-sheet.png", (64, 64)
+        ),
+        frost_missile_explosion_frames=load_sheet_frames(
+            "assets/turrets/frost-missile-explosion-sheet.png", (128, 128)
+        ),
         rocket_turret=pygame.image.load("assets/turrets/rocket1.png"),
         rocket_turret__reloading=pygame.image.load(
             "assets/turrets/rocket1--reloading.png"
@@ -40,3 +57,35 @@ def load_assets() -> Assets:
         ),
         burning_status_effect=pygame.image.load("assets/enemies/status/burning.png"),
     )
+
+
+def load_sheet_frames(
+    filename: str, frame_dims: tuple[int, int]
+) -> list[pygame.Surface]:
+    sheet = pygame.image.load(filename)
+
+    sheet_rect = sheet.get_rect()
+
+    frames: list[pygame.Surface] = []
+
+    x, y = 0, 0
+
+    while y < sheet_rect.height:
+        frame = pygame.Surface(frame_dims, pygame.SRCALPHA)
+
+        frame_rect = pygame.Rect((x, y), frame_dims)
+
+        frame.blit(sheet, (0, 0), frame_rect)
+
+        frames.append(frame)
+
+        x += frame_dims[0]
+
+        if x >= sheet_rect.width:
+            # next row
+            x = 0
+            y += frame_dims[1]
+
+    logger.debug("Loaded %d frames from sheet %s", len(frames), filename)
+
+    return frames

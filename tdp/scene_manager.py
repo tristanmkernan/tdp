@@ -7,7 +7,9 @@ from tdp.scenes.enums import SceneKind, SceneEventKind
 from tdp.scenes import GameScene, MainScene, Scene
 
 
-def start_app():
+def start_app(
+    initial_scene_kind: SceneKind = SceneKind.Main, initial_map: str = "map1"
+):
     #####
     # setup pygame
     #####
@@ -27,7 +29,9 @@ def start_app():
 
     scenes_map = {SceneKind.Main: MainScene, SceneKind.Game: GameScene}
 
-    current_scene: Scene = MainScene(
+    starting_scene = scenes_map[initial_scene_kind]
+
+    current_scene: Scene = starting_scene(
         screen=screen, gui_manager=gui_manager, clock=clock
     )
 

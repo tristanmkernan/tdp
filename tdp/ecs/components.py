@@ -1,8 +1,10 @@
 import dataclasses
 
-from typing import Any
+from typing import Any, Protocol
 
 from pygame import Rect, Vector2, Surface
+
+from tdp.ecs.assets import Assets
 
 from .enums import (
     DamagesEnemyOnCollisionBehavior,
@@ -17,6 +19,8 @@ from .enums import (
     DamagesEnemyEffectKind,
 )
 from .types import SpawningWaveStep
+
+from . import esper
 
 
 @dataclasses.dataclass
@@ -116,13 +120,19 @@ class Velocity:
     )
 
 
+class DamagesEnemyDynamicEffectCreator(Protocol):
+    def __call__(
+        self, world: esper.World, source_ent: int, enemy_ent: int, *, assets: Assets
+    ) -> Any:
+        ...
+
+
 @dataclasses.dataclass
 class DamagesEnemyEffect:
     kind: DamagesEnemyEffectKind
 
     component: Any | None = None
-
-    components: list[Any] | None = None
+    dynamic_effect_creator: DamagesEnemyDynamicEffectCreator | None = None
 
 
 @dataclasses.dataclass
@@ -257,6 +267,11 @@ class RocketMissile:
     damage: int
 
 
+@dataclasses.dataclass
+class FrostMissile:
+    damage: int
+
+
 class RemoveOnOutOfBounds:
     pass
 
@@ -301,3 +316,35 @@ class Burning:
     @property
     def expired(self):
         return self.elapsed >= self.duration
+
+
+@dataclasses.dataclass
+class Frozen:
+    duration: float
+
+    elapsed: float = 0.0
+
+    @property
+    def expired(self):
+        return self.elapsed >= self.duration
+
+
+@dataclasses.dataclass
+class Animated:
+    frames: list[Surface]
+    step: float
+
+    elapsed: float = 0.0
+    current_frame_index: int = 0
+
+    @property
+    def current_frame(self):
+        return self.frames[self.current_frame_index]
+
+    @property
+    def frame_expired(self):
+        return self.elapsed > self.step
+
+    def advance_frame(self):
+        self.current_frame_index = (self.current_frame_index + 1) % len(self.frames)
+        self.elapsed = 0.0
