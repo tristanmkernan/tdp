@@ -134,6 +134,8 @@ class DamagesEnemyEffect:
     kind: DamagesEnemyEffectKind
 
     component: Any | None = None
+    overwrite: bool = True
+
     dynamic_effect_creator: DamagesEnemyDynamicEffectCreator | None = None
 
 
@@ -350,6 +352,10 @@ class Burning:
     def expired(self):
         return self.elapsed >= self.duration
 
+    def reapply(self, other: "Burning"):
+        # dont want to interrupt damage ticks, want to extend duration
+        self.duration = self.elapsed + other.duration
+
 
 @dataclasses.dataclass
 class Frozen:
@@ -360,6 +366,10 @@ class Frozen:
     @property
     def expired(self):
         return self.elapsed >= self.duration
+
+    def reapply(self, other: "Burning"):
+        # dont want to interrupt damage ticks, want to extend duration
+        self.duration = self.elapsed + other.duration
 
 
 @dataclasses.dataclass

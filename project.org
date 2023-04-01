@@ -6,7 +6,7 @@
 - [ ] Multiple enemy paths / wave configurations
 - [X] Enemy health bars
 - [ ] Rocket turret reload progress bar
-- [ ] Turret upgrades
+- [X] Turret upgrades
 - [-] Status effects
   - [X] On fire
   - [ ] Slow or frozen + visual effects
@@ -22,16 +22,16 @@
   - [X] Rocket
   - [X] Freezing
   - [ ] Slowing
-- [ ] Damage should be dynamic
+- [X] Damage should be dynamic
   - Interacts with upgrades
 - [ ] Enemy death leaves skull on ground
   - Skull fades out over time
 - [ ] Transformation system
   - Combines all potential transformations, like fade in/out, grow/shrink, rotate
-- [ ] Turret selection
-  - [ ] Turret range indicators
-  - [ ] Turret upgrades
-  - [ ] Turret details
+- [X] Turret selection
+  - [X] Turret range indicators
+  - [X] Turret upgrades
+  - [X] Turret details
     - Should we use the floating ui panel for this?
 - [ ] Fix unit pathing
   - Units seem to turn right as they approach a path marker
@@ -44,6 +44,6 @@
 
 * Bugs
 
-- [ ] Burning component is replaced, meaning that units don't take damage while repeatedly being hit
+- [X] Burning component is replaced, meaning that units don't take damage while repeatedly being hit
 - [X] Flame turret flames should have limited lifespan / range
   - It's odd that the flames can travel across the map

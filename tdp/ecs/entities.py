@@ -116,6 +116,24 @@ def create_flame_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
+    upgrade_levels = {
+        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.RateOfFire: 1,
+        TurretUpgradeablePropertyKind.Range: 1,
+    }
+
+    base_stats = {
+        TurretUpgradeablePropertyKind.Damage: 0,
+        TurretUpgradeablePropertyKind.RateOfFire: 75.0,
+        TurretUpgradeablePropertyKind.Range: 200.0,
+    }
+
+    stat_changes_per_level = {
+        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.RateOfFire: -5.0,
+        TurretUpgradeablePropertyKind.Range: 25.0,
+    }
+
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
 
@@ -123,8 +141,10 @@ def create_flame_turret(
         TurretMachine(
             state=TurretState.Idle,
             kind=TurretKind.Flame,
-            firing_cooldown=5.0,
             firing_animation_duration=0,
+            upgrade_levels=upgrade_levels,
+            base_stats=base_stats,
+            stat_changes_per_level=stat_changes_per_level,
         ),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
@@ -142,6 +162,24 @@ def create_frost_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
+    upgrade_levels = {
+        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.RateOfFire: 1,
+        TurretUpgradeablePropertyKind.Range: 1,
+    }
+
+    base_stats = {
+        TurretUpgradeablePropertyKind.Damage: 3,
+        TurretUpgradeablePropertyKind.RateOfFire: 2000.0,
+        TurretUpgradeablePropertyKind.Range: 500.0,
+    }
+
+    stat_changes_per_level = {
+        TurretUpgradeablePropertyKind.Damage: 2,
+        TurretUpgradeablePropertyKind.RateOfFire: -150.0,
+        TurretUpgradeablePropertyKind.Range: 100.0,
+    }
+
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
 
@@ -149,8 +187,10 @@ def create_frost_turret(
         TurretMachine(
             state=TurretState.Idle,
             kind=TurretKind.Frost,
-            firing_cooldown=2_000.0,
             firing_animation_duration=0,
+            upgrade_levels=upgrade_levels,
+            base_stats=base_stats,
+            stat_changes_per_level=stat_changes_per_level,
         ),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
@@ -168,6 +208,24 @@ def create_rocket_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
+    upgrade_levels = {
+        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.RateOfFire: 1,
+        TurretUpgradeablePropertyKind.Range: 1,
+    }
+
+    base_stats = {
+        TurretUpgradeablePropertyKind.Damage: 3,
+        TurretUpgradeablePropertyKind.RateOfFire: 2000.0,
+        TurretUpgradeablePropertyKind.Range: 500.0,
+    }
+
+    stat_changes_per_level = {
+        TurretUpgradeablePropertyKind.Damage: 2,
+        TurretUpgradeablePropertyKind.RateOfFire: -150.0,
+        TurretUpgradeablePropertyKind.Range: 100.0,
+    }
+
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
 
@@ -175,9 +233,11 @@ def create_rocket_turret(
         TurretMachine(
             state=TurretState.Idle,
             kind=TurretKind.Rocket,
-            firing_cooldown=2_000.0,
             firing_animation_duration=0,
             reloading_duration=500.0,
+            upgrade_levels=upgrade_levels,
+            base_stats=base_stats,
+            stat_changes_per_level=stat_changes_per_level,
         ),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
@@ -257,6 +317,7 @@ def create_missile(
     world: esper.World, turret_ent: int, enemy_ent: int, *, assets: Assets
 ):
     turret_bbox = world.component_for_entity(turret_ent, BoundingBox)
+    turret_machine = world.component_for_entity(turret_ent, TurretMachine)
     enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
 
     image = assets.rocket_missile
@@ -276,7 +337,7 @@ def create_missile(
         BoundingBox(rect=missile_rect, rotation=vec),
         Renderable(image=image, order=RenderableOrder.Objects),
         Velocity(vec=vec),
-        RocketMissile(damage=15),
+        RocketMissile(damage=turret_machine.damage),
         RemoveOnOutOfBounds(),
         DamagesEnemy(
             damage=0,
@@ -323,6 +384,7 @@ def create_flame(
     world: esper.World, turret_ent: int, enemy_ent: int, *, assets: Assets
 ):
     turret_bbox = world.component_for_entity(turret_ent, BoundingBox)
+    turret_machine = world.component_for_entity(turret_ent, TurretMachine)
     enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
 
     image = assets.flame_particle
@@ -336,7 +398,10 @@ def create_flame(
     # +15, -15 deg range (30 deg total cone)
     vec = vec.rotate(random.uniform(-15.0, 15.0))
 
-    vec.scale_to_length(0.35)
+    speed = 0.35
+    vec.scale_to_length(speed)
+
+    duration = turret_machine.range / speed
 
     # flame should spawn outside turret, not inside
     # let's adjust position along target vector
@@ -353,14 +418,19 @@ def create_flame(
         Renderable(image=image, order=RenderableOrder.Objects),
         Velocity(vec=vec),
         RemoveOnOutOfBounds(),
-        TimeToLive(duration=500.0),
+        TimeToLive(duration=duration),
         DamagesEnemy(
             damage=0,
             effects=[
                 DamagesEnemyEffect(
                     kind=DamagesEnemyEffectKind.AddsComponent,
+                    overwrite=False,
                     component=Burning(
-                        damage=1, damage_tick_rate=250.0, duration=1_000.0
+                        # TODO consider scaling damage on tick rate or duration
+                        # or adding more upgradeable properties custom per turret
+                        damage=turret_machine.damage,
+                        damage_tick_rate=500.0,
+                        duration=1_000.0,
                     ),
                 )
             ],
@@ -372,6 +442,7 @@ def create_frost(
     world: esper.World, turret_ent: int, enemy_ent: int, *, assets: Assets
 ):
     turret_bbox = world.component_for_entity(turret_ent, BoundingBox)
+    turret_machine = world.component_for_entity(turret_ent, TurretMachine)
     enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
 
     animated = Animated(frames=assets.frost_missile_frames, step=50.0)
@@ -383,7 +454,6 @@ def create_frost(
         Vector2(enemy_bbox.rect.center) - Vector2(turret_bbox.rect.center)
     ).normalize()
 
-    # from 0.95
     vec.scale_to_length(0.5)
 
     # frost should spawn outside turret, not inside
@@ -402,12 +472,14 @@ def create_frost(
         Renderable(image=image, order=RenderableOrder.Objects),
         Velocity(vec=vec),
         RemoveOnOutOfBounds(),
-        FrostMissile(damage=15),
+        FrostMissile(damage=turret_machine.damage),
         DamagesEnemy(
             damage=1,
             effects=[
                 DamagesEnemyEffect(
                     kind=DamagesEnemyEffectKind.AddsComponent,
+                    overwrite=False,
+                    # TODO could scale with damage or custom property
                     component=Frozen(duration=1_000.0),
                 ),
                 DamagesEnemyEffect(
@@ -458,9 +530,19 @@ def apply_damage_effects_to_enemy(
     for effect in damages_enemy.effects:
         match effect:
             case DamagesEnemyEffect(
-                kind=DamagesEnemyEffectKind.AddsComponent, component=component
+                kind=DamagesEnemyEffectKind.AddsComponent,
+                component=component,
+                overwrite=overwrite,
             ):
-                world.add_component(enemy_ent, component)
+                # TODO reconsider using type()
+                if not overwrite and (
+                    existing_component := world.try_component(
+                        enemy_ent, type(component)
+                    )
+                ):
+                    existing_component.reapply(component)
+                else:
+                    world.add_component(enemy_ent, component)
             case DamagesEnemyEffect(
                 kind=DamagesEnemyEffectKind.DynamicCreator,
                 dynamic_effect_creator=dynamic_effect_creator,
