@@ -5,7 +5,7 @@ import pygame
 
 from pygame import Rect, Vector2
 
-from ..constants import PLAYER_STARTING_MONEY
+from ..constants import MAX_TURRET_PROPERTY_UPGRADE_LEVEL, PLAYER_STARTING_MONEY
 
 from .assets import Assets
 from .components import (
@@ -195,10 +195,22 @@ def create_bullet_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
-    default_upgrade_levels = {
+    upgrade_levels = {
         TurretUpgradeablePropertyKind.Damage: 1,
         TurretUpgradeablePropertyKind.RateOfFire: 1,
         TurretUpgradeablePropertyKind.Range: 1,
+    }
+
+    base_stats = {
+        TurretUpgradeablePropertyKind.Damage: 0,
+        TurretUpgradeablePropertyKind.RateOfFire: 1000.0,
+        TurretUpgradeablePropertyKind.Range: 200.0,
+    }
+
+    stat_changes_per_level = {
+        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.RateOfFire: -75.0,
+        TurretUpgradeablePropertyKind.Range: 50.0,
     }
 
     # for now, remove build zone entity, but may want to disable instead
@@ -208,7 +220,11 @@ def create_bullet_turret(
         TurretMachine(
             state=TurretState.Idle,
             kind=TurretKind.Bullet,
-            upgrade_levels=default_upgrade_levels,
+            upgrade_levels=upgrade_levels,
+            base_stats=base_stats,
+            stat_changes_per_level=stat_changes_per_level,
+            # sync'd with max rate of fire
+            firing_animation_duration=250.0,
         ),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
@@ -488,12 +504,22 @@ def track_score_event(world: esper.World, kind: ScoreEventKind):
     score_tracker.scores[kind] += 1
 
 
+def turret_property_can_be_upgraded(
+    world: esper.World, turret_ent: int, turret_property: TurretUpgradeablePropertyKind
+) -> bool:
+    turret = world.component_for_entity(turret_ent, TurretMachine)
+
+    return turret.upgrade_levels[turret_property] < MAX_TURRET_PROPERTY_UPGRADE_LEVEL
+
+
 def upgrade_turret(
     world: esper.World, turret_ent: int, turret_property: TurretUpgradeablePropertyKind
 ):
     turret = world.component_for_entity(turret_ent, TurretMachine)
 
-    turret.upgrade_levels[turret_property] += 1
+    turret.upgrade_levels[turret_property] = min(
+        MAX_TURRET_PROPERTY_UPGRADE_LEVEL, turret.upgrade_levels[turret_property] + 1
+    )
 
 
 def sync_selected_turret_range_extra_renderable(

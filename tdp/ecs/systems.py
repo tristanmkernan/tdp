@@ -42,6 +42,7 @@ from .entities import (
     spawn_tank,
     sync_selected_turret_range_extra_renderable,
     track_score_event,
+    turret_property_can_be_upgraded,
     upgrade_turret,
 )
 from .enums import (
@@ -316,6 +317,10 @@ class PlayerInputProcessor(esper.Processor):
                 }:
                     if player_has_resources_to_upgrade_turret(
                         self.world, turret_property
+                    ) and turret_property_can_be_upgraded(
+                        self.world,
+                        player_input_machine.selected_turret,
+                        turret_property,
                     ):
                         upgrade_turret(
                             self.world,
