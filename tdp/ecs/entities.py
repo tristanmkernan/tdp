@@ -40,6 +40,7 @@ from .enums import (
     ScoreEventKind,
     TurretKind,
     TurretState,
+    TurretUpgradeablePropertyKind,
 )
 
 from . import esper
@@ -117,7 +118,9 @@ def kill_enemy(world: esper.World, enemy_ent: int):
     player_resources.money += enemy.bounty
 
 
-def create_flame_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
+def create_flame_turret(
+    world: esper.World, build_zone_ent: int, *, assets: Assets
+) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
     image = assets.flame_turret
@@ -135,14 +138,15 @@ def create_flame_turret(world: esper.World, build_zone_ent: int, *, assets: Asse
             kind=TurretKind.Flame,
             firing_cooldown=5.0,
             firing_animation_duration=0,
-            range=250,
         ),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
     )
 
 
-def create_frost_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
+def create_frost_turret(
+    world: esper.World, build_zone_ent: int, *, assets: Assets
+) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
     image = assets.frost_turret
@@ -160,14 +164,15 @@ def create_frost_turret(world: esper.World, build_zone_ent: int, *, assets: Asse
             kind=TurretKind.Frost,
             firing_cooldown=2_000.0,
             firing_animation_duration=0,
-            range=500,
         ),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
     )
 
 
-def create_rocket_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
+def create_rocket_turret(
+    world: esper.World, build_zone_ent: int, *, assets: Assets
+) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
     image = assets.rocket_turret
@@ -186,14 +191,15 @@ def create_rocket_turret(world: esper.World, build_zone_ent: int, *, assets: Ass
             firing_cooldown=2_000.0,
             firing_animation_duration=0,
             reloading_duration=500.0,
-            range=750,
         ),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
     )
 
 
-def create_bullet_turret(world: esper.World, build_zone_ent: int, *, assets: Assets):
+def create_bullet_turret(
+    world: esper.World, build_zone_ent: int, *, assets: Assets
+) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
     image = assets.bullet_turret
@@ -202,11 +208,21 @@ def create_bullet_turret(world: esper.World, build_zone_ent: int, *, assets: Ass
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
+    default_upgrade_levels = {
+        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.RateOfFire: 1,
+        TurretUpgradeablePropertyKind.Range: 1,
+    }
+
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
 
     return world.create_entity(
-        TurretMachine(state=TurretState.Idle, kind=TurretKind.Bullet),
+        TurretMachine(
+            state=TurretState.Idle,
+            kind=TurretKind.Bullet,
+            upgrade_levels=default_upgrade_levels,
+        ),
         bbox,
         Renderable(image=image, order=RenderableOrder.Objects),
     )
@@ -449,18 +465,20 @@ def apply_damage_effects_to_enemy(
                 dynamic_effect_creator(world, source_ent, enemy_ent, assets=assets)
 
 
-def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int):
-    turret_bbox = world.component_for_entity(turret_ent, BoundingBox)
+def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int) -> int:
+    turret_machine = world.component_for_entity(turret_ent, TurretMachine)
+
     enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
 
     bullet_size = 12, 12
 
-    # spawn bullet on top of enemy, "instantaneous" damage
-
     return world.create_entity(
+        # spawn bullet on top of enemy, "instantaneous" damage
         BoundingBox(rect=Rect(enemy_bbox.rect.center, bullet_size)),
-        DamagesEnemy(damage=1),
-        RemoveOnOutOfBounds(),
+        DamagesEnemy(damage=turret_machine.damage),
+        # possible that bullet spawns and doesnt hit enemy due to enemy dying
+        # to other damage, so let's not let the bullet linger
+        TimeToLive(50.0),
     )
 
 
@@ -481,3 +499,11 @@ def track_score_event(world: esper.World, kind: ScoreEventKind):
     score_tracker.recent_events = score_tracker.recent_events[:10]
 
     score_tracker.scores[kind] += 1
+
+
+def upgrade_turret(
+    world: esper.World, turret_ent: int, turret_property: TurretUpgradeablePropertyKind
+):
+    turret = world.component_for_entity(turret_ent, TurretMachine)
+
+    turret.upgrade_levels[turret_property] += 1

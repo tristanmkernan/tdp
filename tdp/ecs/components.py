@@ -15,6 +15,7 @@ from .enums import (
     TurretState,
     TurretKind,
     PlayerInputState,
+    TurretUpgradeablePropertyKind,
     VelocityAdjustmentKind,
     DamagesEnemyEffectKind,
 )
@@ -171,6 +172,7 @@ class PlayerInputMachine:
     state: PlayerInputState = PlayerInputState.Idle
 
     turret_to_build: TurretKind | None = None
+    selected_turret: int | None = None
 
 
 @dataclasses.dataclass
@@ -236,13 +238,14 @@ class TurretBuildZone:
 class TurretMachine:
     state: TurretState
     kind: TurretKind
+    upgrade_levels: dict[TurretUpgradeablePropertyKind, int]
 
-    firing_cooldown: float = 1_000.0
+    elapsed: float = 0.0
+
+    # TODO these have to be sync'd with level
     firing_animation_duration: float = 250.0
     reloading_duration: float = 0.0
-    elapsed: float = 0.0
     idle_rotation_speed: float = 0.025
-    range: float = 500.0
 
     @property
     def can_fire(self):
@@ -255,6 +258,48 @@ class TurretMachine:
     @property
     def finished_reloading(self):
         return self.elapsed >= self.reloading_duration
+
+    @property
+    def firing_cooldown(self) -> float:
+        level = self.upgrade_levels[TurretUpgradeablePropertyKind.RateOfFire]
+
+        match self.kind:
+            case TurretKind.Bullet:
+                base = 1_000.0
+                per_level = 75.0
+            case _:
+                base = 0
+                per_level = 0
+
+        return base - level * per_level
+
+    @property
+    def damage(self) -> int:
+        level = self.upgrade_levels[TurretUpgradeablePropertyKind.Damage]
+
+        match self.kind:
+            case TurretKind.Bullet:
+                base = 0
+                per_level = 1
+            case _:
+                base = 0
+                per_level = 0
+
+        return base + level * per_level
+
+    @property
+    def range(self) -> float:
+        level = self.upgrade_levels[TurretUpgradeablePropertyKind.Range]
+
+        match self.kind:
+            case TurretKind.Bullet:
+                base = 200.0
+                per_level = 50.0
+            case _:
+                base = 0
+                per_level = 0
+
+        return base + level * per_level
 
 
 @dataclasses.dataclass

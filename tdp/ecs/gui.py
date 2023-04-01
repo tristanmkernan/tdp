@@ -5,8 +5,11 @@ import pygame_gui
 
 from tdp.constants import GUI_WIDTH, GUI_HEIGHT, GUI_X_OFFSET, GUI_Y_OFFSET
 
-from .enums import TurretKind
-from .resources import TURRET_BUILD_COSTS
+from .components import TurretMachine
+from .enums import TurretKind, TurretUpgradeablePropertyKind
+from .resources import TURRET_BUILD_COSTS, TURRET_UPGRADE_COSTS, TURRET_NAMES
+
+from . import esper
 
 
 @dataclasses.dataclass
@@ -25,6 +28,18 @@ class GuiElements:
     frost_turret_build_button: pygame_gui.elements.UIButton
 
     clear_turret_build_button: pygame_gui.elements.UIButton
+
+    selected_turret_panel: pygame_gui.elements.UIPanel
+    selected_turret_name_label: pygame_gui.elements.UILabel
+
+    selected_turret_damage_label: pygame_gui.elements.UILabel
+    selected_turret_damage_upgrade_button: pygame_gui.elements.UIButton
+
+    selected_turret_rate_of_fire_label: pygame_gui.elements.UILabel
+    selected_turret_rate_of_fire_upgrade_button: pygame_gui.elements.UIButton
+
+    selected_turret_range_label: pygame_gui.elements.UILabel
+    selected_turret_range_upgrade_button: pygame_gui.elements.UIButton
 
 
 def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
@@ -64,7 +79,7 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
 
     basic_turret_build_button = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((10, 140), (panel_width, 20)),
-        text=f"Basic Turret (${TURRET_BUILD_COSTS[TurretKind.Bullet]})",
+        text=f"{TURRET_NAMES[TurretKind.Bullet]} Turret (${TURRET_BUILD_COSTS[TurretKind.Bullet]})",
         manager=manager,
         container=panel,
         object_id=pygame_gui.core.ObjectID(
@@ -74,7 +89,7 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
 
     flame_turret_build_button = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((10, 160), (panel_width, 20)),
-        text=f"Flame Turret (${TURRET_BUILD_COSTS[TurretKind.Flame]})",
+        text=f"{TURRET_NAMES[TurretKind.Flame]} Turret (${TURRET_BUILD_COSTS[TurretKind.Flame]})",
         manager=manager,
         container=panel,
         object_id=pygame_gui.core.ObjectID(
@@ -84,7 +99,7 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
 
     frost_turret_build_button = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((10, 180), (panel_width, 20)),
-        text=f"Frost Turret (${TURRET_BUILD_COSTS[TurretKind.Frost]})",
+        text=f"{TURRET_NAMES[TurretKind.Frost]} Turret (${TURRET_BUILD_COSTS[TurretKind.Frost]})",
         manager=manager,
         container=panel,
         object_id=pygame_gui.core.ObjectID(
@@ -94,7 +109,7 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
 
     rocket_turret_build_button = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((10, 200), (panel_width, 20)),
-        text=f"Rocket Turret (${TURRET_BUILD_COSTS[TurretKind.Rocket]})",
+        text=f"{TURRET_NAMES[TurretKind.Rocket]} Turret (${TURRET_BUILD_COSTS[TurretKind.Rocket]})",
         manager=manager,
         container=panel,
         object_id=pygame_gui.core.ObjectID(
@@ -109,7 +124,79 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
         container=panel,
     )
 
-    # TODO selected turret ui (upgrades)
+    selected_turret_panel = pygame_gui.elements.UIPanel(
+        relative_rect=pygame.Rect((10, 260), (panel_width, 300)),
+        container=panel,
+        manager=manager,
+    )
+
+    selected_turret_panel_width = panel_width - 20
+    selected_turret_stat_col_width = selected_turret_panel_width / 2
+
+    selected_turret_name_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((10, 10), (selected_turret_panel_width, 20)),
+        text="? Turret",
+        manager=manager,
+        container=selected_turret_panel,
+    )
+
+    selected_turret_damage_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((10, 40), (selected_turret_stat_col_width, 20)),
+        text="Damage: 10",
+        manager=manager,
+        container=selected_turret_panel,
+    )
+
+    selected_turret_damage_upgrade_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect(
+            (selected_turret_stat_col_width + 10, 40),
+            (selected_turret_stat_col_width - 10, 20),
+        ),
+        text=f"++ (${TURRET_UPGRADE_COSTS[TurretUpgradeablePropertyKind.Damage]})",
+        manager=manager,
+        container=selected_turret_panel,
+    )
+
+    selected_turret_rate_of_fire_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((10, 70), (selected_turret_stat_col_width, 20)),
+        text="Freq: 10",
+        manager=manager,
+        container=selected_turret_panel,
+    )
+
+    selected_turret_rate_of_fire_upgrade_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect(
+            (selected_turret_stat_col_width + 10, 70),
+            (selected_turret_stat_col_width - 10, 20),
+        ),
+        text=f"++ (${TURRET_UPGRADE_COSTS[TurretUpgradeablePropertyKind.RateOfFire]})",
+        manager=manager,
+        container=selected_turret_panel,
+    )
+
+    selected_turret_range_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((10, 100), (selected_turret_stat_col_width, 20)),
+        text="Range: 10",
+        manager=manager,
+        container=selected_turret_panel,
+    )
+
+    selected_turret_range_upgrade_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect(
+            (selected_turret_stat_col_width + 10, 100),
+            (selected_turret_stat_col_width - 10, 20),
+        ),
+        text=f"++ (${TURRET_UPGRADE_COSTS[TurretUpgradeablePropertyKind.Range]})",
+        manager=manager,
+        container=selected_turret_panel,
+    )
+
+    # TODO quit button
+
+    # TODO pause button
+
+    # hidden by default
+    selected_turret_panel.hide()
 
     return GuiElements(
         panel=panel,
@@ -122,6 +209,14 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
         frost_turret_build_button=frost_turret_build_button,
         rocket_turret_build_button=rocket_turret_build_button,
         clear_turret_build_button=clear_turret_build_button,
+        selected_turret_panel=selected_turret_panel,
+        selected_turret_name_label=selected_turret_name_label,
+        selected_turret_damage_label=selected_turret_damage_label,
+        selected_turret_damage_upgrade_button=selected_turret_damage_upgrade_button,
+        selected_turret_rate_of_fire_label=selected_turret_rate_of_fire_label,
+        selected_turret_rate_of_fire_upgrade_button=selected_turret_rate_of_fire_upgrade_button,
+        selected_turret_range_label=selected_turret_range_label,
+        selected_turret_range_upgrade_button=selected_turret_range_upgrade_button,
     )
 
 
@@ -129,3 +224,25 @@ def cleanup_gui(gui_elements: GuiElements):
     for field in dataclasses.fields(gui_elements):
         if gui_elem := getattr(gui_elements, field.name, None):
             gui_elem.kill()
+
+
+def sync_selected_turret_gui(
+    world: esper.World, turret_ent: int, gui_elements: GuiElements
+):
+    turret = world.component_for_entity(turret_ent, TurretMachine)
+
+    gui_elements.selected_turret_name_label.set_text(
+        f"{TURRET_NAMES[turret.kind]} Turret"
+    )
+
+    gui_elements.selected_turret_damage_label.set_text(
+        f"Damage: {turret.upgrade_levels[TurretUpgradeablePropertyKind.Damage]}"
+    )
+
+    gui_elements.selected_turret_rate_of_fire_label.set_text(
+        f"Freq: {turret.upgrade_levels[TurretUpgradeablePropertyKind.RateOfFire]}"
+    )
+
+    gui_elements.selected_turret_range_label.set_text(
+        f"Range: {turret.upgrade_levels[TurretUpgradeablePropertyKind.Range]}"
+    )

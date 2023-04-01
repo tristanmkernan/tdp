@@ -7,7 +7,7 @@ from pygame import Vector2, Rect
 from tdp.constants import MAP_HEIGHT, MAP_WIDTH
 
 from .assets import Assets
-from .gui import GuiElements
+from .gui import GuiElements, sync_selected_turret_gui
 from .types import PlayerAction
 from .components import (
     Animated,
@@ -41,6 +41,7 @@ from .entities import (
     spawn_grunt,
     spawn_tank,
     track_score_event,
+    upgrade_turret,
 )
 from .enums import (
     DamagesEnemyOnCollisionBehavior,
@@ -59,7 +60,9 @@ from .enums import (
 from .rendering import render_composite, render_simple
 from .resources import (
     player_has_resources_to_build_turret,
+    player_has_resources_to_upgrade_turret,
     subtract_resources_to_build_turret,
+    subtract_resources_to_upgrade_turret,
 )
 from .util import (
     get_player_action_for_button_press,
@@ -276,7 +279,14 @@ class PlayerInputProcessor(esper.Processor):
                         player_actions.append(action)
 
         acceptable_actions: dict[PlayerInputState, set[PlayerActionKind]] = {
-            PlayerInputState.Idle: {PlayerActionKind.SetTurretToBuild},
+            PlayerInputState.Idle: {
+                PlayerActionKind.SetTurretToBuild,
+                PlayerActionKind.SelectTurret,
+            },
+            PlayerInputState.SelectingTurret: {
+                PlayerActionKind.UpgradeTurretProperty,
+                PlayerActionKind.SetTurretToBuild,
+            },
             PlayerInputState.BuildingTurret: {
                 PlayerActionKind.ClearTurretToBuild,
                 PlayerActionKind.SetTurretToBuild,
@@ -284,11 +294,39 @@ class PlayerInputProcessor(esper.Processor):
             },
         }
 
+        changed_selected_turret = False
+        changed_turret_to_build = False
+
         for action in player_actions:
             if not action["kind"] in acceptable_actions[player_input_machine.state]:
                 continue
 
             match action:
+                case {"kind": PlayerActionKind.SelectTurret, "ent": ent}:
+                    player_input_machine.state = PlayerInputState.SelectingTurret
+                    player_input_machine.selected_turret = ent
+
+                    changed_selected_turret = True
+
+                case {
+                    "kind": PlayerActionKind.UpgradeTurretProperty,
+                    "turret_property": turret_property,
+                }:
+                    if player_has_resources_to_upgrade_turret(
+                        self.world, turret_property
+                    ):
+                        upgrade_turret(
+                            self.world,
+                            player_input_machine.selected_turret,
+                            turret_property,
+                        )
+
+                        subtract_resources_to_upgrade_turret(
+                            self.world, turret_property
+                        )
+
+                        changed_selected_turret = True
+
                 case {
                     "kind": PlayerActionKind.SetTurretToBuild,
                     "turret_kind": turret_kind,
@@ -297,52 +335,83 @@ class PlayerInputProcessor(esper.Processor):
                         player_input_machine.turret_to_build = turret_kind
                         player_input_machine.state = PlayerInputState.BuildingTurret
 
+                        changed_turret_to_build = True
+
                 case {"kind": PlayerActionKind.ClearTurretToBuild}:
                     player_input_machine.turret_to_build = None
                     player_input_machine.state = PlayerInputState.Idle
 
+                    changed_turret_to_build = True
+
                 case {"kind": PlayerActionKind.SelectTurretBuildZone, "ent": ent}:
                     # for now, let's just build a turret here
                     # TODO also could have hover state, building time, so on
+                    new_turret_ent = None
+
                     match player_input_machine.turret_to_build:
                         case TurretKind.Flame:
-                            create_flame_turret(self.world, ent, assets=assets)
+                            new_turret_ent = create_flame_turret(
+                                self.world, ent, assets=assets
+                            )
                         case TurretKind.Bullet:
-                            create_bullet_turret(self.world, ent, assets=assets)
+                            new_turret_ent = create_bullet_turret(
+                                self.world, ent, assets=assets
+                            )
                         case TurretKind.Rocket:
-                            create_rocket_turret(self.world, ent, assets=assets)
+                            new_turret_ent = create_rocket_turret(
+                                self.world, ent, assets=assets
+                            )
                         case TurretKind.Frost:
-                            create_frost_turret(self.world, ent, assets=assets)
+                            new_turret_ent = create_frost_turret(
+                                self.world, ent, assets=assets
+                            )
 
                     subtract_resources_to_build_turret(
                         self.world, player_input_machine.turret_to_build
                     )
 
+                    player_input_machine.state = PlayerInputState.SelectingTurret
                     player_input_machine.turret_to_build = None
-                    player_input_machine.state = PlayerInputState.Idle
+                    player_input_machine.selected_turret = new_turret_ent
 
-        # maybe add a border (or other visual effect) to the selected turret button
-        turret_gui_element_map = {
-            TurretKind.Bullet: gui_elements.basic_turret_build_button,
-            TurretKind.Flame: gui_elements.flame_turret_build_button,
-            TurretKind.Frost: gui_elements.frost_turret_build_button,
-            TurretKind.Rocket: gui_elements.rocket_turret_build_button,
-        }
+                    changed_turret_to_build = True
+                    changed_selected_turret = True
 
-        match player_input_machine.state:
-            case PlayerInputState.Idle:
-                # reset button classes
-                for gui_button in turret_gui_element_map.values():
-                    gui_button.enable()
-            case PlayerInputState.BuildingTurret:
-                # reset button classes
-                for gui_button in turret_gui_element_map.values():
-                    gui_button.enable()
+        if changed_turret_to_build:
+            # maybe add a border (or other visual effect) to the selected turret button
+            turret_gui_element_map = {
+                TurretKind.Bullet: gui_elements.basic_turret_build_button,
+                TurretKind.Flame: gui_elements.flame_turret_build_button,
+                TurretKind.Frost: gui_elements.frost_turret_build_button,
+                TurretKind.Rocket: gui_elements.rocket_turret_build_button,
+            }
 
-                if gui_button := turret_gui_element_map.get(
-                    player_input_machine.turret_to_build
-                ):
-                    gui_button.disable()
+            match player_input_machine.state:
+                case PlayerInputState.BuildingTurret:
+                    # reset button classes
+                    for gui_button in turret_gui_element_map.values():
+                        gui_button.enable()
+
+                    if gui_button := turret_gui_element_map.get(
+                        player_input_machine.turret_to_build
+                    ):
+                        gui_button.disable()
+                case _:
+                    # reset button classes
+                    for gui_button in turret_gui_element_map.values():
+                        gui_button.enable()
+
+        if changed_selected_turret:
+            if player_input_machine.selected_turret:
+                # update selected turret ui
+                sync_selected_turret_gui(
+                    self.world, player_input_machine.selected_turret, gui_elements
+                )
+
+                gui_elements.selected_turret_panel.show()
+            else:
+                # if no selected turret, hide the selected turret ui
+                gui_elements.selected_turret_panel.hide()
 
 
 class ScoreTimeTrackerProcessor(esper.Processor):

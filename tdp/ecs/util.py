@@ -4,9 +4,9 @@ from pygame.math import Vector2
 
 from tdp.ecs.gui import GuiElements
 
-from .components import BoundingBox, TurretBuildZone, Enemy
+from .components import BoundingBox, TurretBuildZone, Enemy, TurretMachine
 from .types import PlayerAction
-from .enums import PlayerActionKind, TurretKind
+from .enums import PlayerActionKind, TurretKind, TurretUpgradeablePropertyKind
 
 from . import esper
 
@@ -18,6 +18,10 @@ def get_player_action_for_click(world: esper.World, pos) -> PlayerAction | None:
     for ent, (bbox, bz) in world.get_components(BoundingBox, TurretBuildZone):
         if bbox.rect.collidepoint(pos):
             return {"kind": PlayerActionKind.SelectTurretBuildZone, "ent": ent}
+
+    for ent, (bbox, turret_machine) in world.get_components(BoundingBox, TurretMachine):
+        if bbox.rect.collidepoint(pos):
+            return {"kind": PlayerActionKind.SelectTurret, "ent": ent}
 
     return None
 
@@ -49,6 +53,21 @@ def get_player_action_for_button_press(
         case gui_elements.clear_turret_build_button:
             return {
                 "kind": PlayerActionKind.ClearTurretToBuild,
+            }
+        case gui_elements.selected_turret_damage_upgrade_button:
+            return {
+                "kind": PlayerActionKind.UpgradeTurretProperty,
+                "turret_property": TurretUpgradeablePropertyKind.Damage,
+            }
+        case gui_elements.selected_turret_rate_of_fire_upgrade_button:
+            return {
+                "kind": PlayerActionKind.UpgradeTurretProperty,
+                "turret_property": TurretUpgradeablePropertyKind.RateOfFire,
+            }
+        case gui_elements.selected_turret_range_upgrade_button:
+            return {
+                "kind": PlayerActionKind.UpgradeTurretProperty,
+                "turret_property": TurretUpgradeablePropertyKind.Range,
             }
 
 

@@ -18,9 +18,12 @@ class InputEventKind(enum.IntEnum):
 
 class PlayerActionKind(enum.IntEnum):
     SelectTurretBuildZone = enum.auto()
+    SelectTurret = enum.auto()
 
     SetTurretToBuild = enum.auto()
     ClearTurretToBuild = enum.auto()
+
+    UpgradeTurretProperty = enum.auto()
 
 
 class RenderableExtraOrder(enum.IntEnum):
@@ -66,9 +69,16 @@ class TurretKind(enum.IntEnum):
     Frost = enum.auto()
 
 
+class TurretUpgradeablePropertyKind(enum.IntEnum):
+    Damage = enum.auto()
+    RateOfFire = enum.auto()
+    Range = enum.auto()
+
+
 class PlayerInputState(enum.IntEnum):
     Idle = enum.auto()
     BuildingTurret = enum.auto()
+    SelectingTurret = enum.auto()
 
 
 class SpawningWaveStepKind(enum.IntEnum):
