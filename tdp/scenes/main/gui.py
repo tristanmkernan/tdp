@@ -17,13 +17,22 @@ class GuiElements:
 
 
 def build_gui(gui_manager: pygame_gui.UIManager) -> GuiElements:
+    el_width, el_height = 400, 30
+    margin = 10
+    offset = el_height + margin
+
+    panel_rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+
+    center_x = (SCREEN_WIDTH - el_width) / 2
+    center_y = 120
+
     panel = pygame_gui.elements.UIPanel(
-        relative_rect=pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),
+        relative_rect=panel_rect,
         manager=gui_manager,
     )
 
     title = pygame_gui.elements.UILabel(
-        relative_rect=pygame.Rect(50, 50, 400, 20),
+        relative_rect=pygame.Rect(center_x, center_y, el_width, el_height),
         text="Tower Defense Proto",
         manager=gui_manager,
         container=panel,
@@ -33,20 +42,20 @@ def build_gui(gui_manager: pygame_gui.UIManager) -> GuiElements:
         # TODO
         ["Map 1", "Map2"],
         "Map 1",
-        relative_rect=pygame.Rect(50, 80, 400, 20),
+        relative_rect=pygame.Rect(center_x, center_y + offset, el_width, el_height),
         manager=gui_manager,
         container=panel,
     )
 
     play_game_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect(50, 110, 400, 20),
+        relative_rect=pygame.Rect(center_x, center_y + offset * 2, el_width, el_height),
         text="Play Game",
         manager=gui_manager,
         container=panel,
     )
 
     qui_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect(50, 140, 400, 20),
+        relative_rect=pygame.Rect(center_x, center_y + offset * 3, el_width, el_height),
         text="Quit",
         manager=gui_manager,
         container=panel,

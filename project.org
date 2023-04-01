@@ -13,14 +13,14 @@
 - [ ] More enemy types
 - [ ] Smart enemies
   - [ ] Jetpack or digging enemies
-- [ ] General UI work
-  - [ ] Main screen
+- [-] General UI work
+  - [X] Main screen
   - [ ] High scores
   - [ ] Game over
-  - [ ] Map selection
-- [-] More turret types [1/3]
+  - [X] Map selection
+- [-] More turret types [2/3]
   - [X] Rocket
-  - [ ] Freezing
+  - [X] Freezing
   - [ ] Slowing
 - [ ] Damage should be dynamic
   - Interacts with upgrades
@@ -39,9 +39,11 @@
 - [ ] Spawning config should support enemy health modifiers
   - Maybe health generally increases over time?
   - Or just stick to different unit types
+- [ ] Research system for unlocking turret types and upgrades
+- [ ] Game over
 
 * Bugs
 
 - [ ] Burning component is replaced, meaning that units don't take damage while repeatedly being hit
-- [ ] Flame turret flames should have limited lifespan / range
+- [X] Flame turret flames should have limited lifespan / range
   - It's odd that the flames can travel across the map
