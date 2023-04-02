@@ -48,9 +48,12 @@
 - [ ] Turret stats
   - [ ] Lifetime damage
 - [ ] Deselect turret
+- [ ] Turret target priority
+  - Closest, furthest, lowest health, highest max health (i.e. enemy class)
 
 * Bugs
 
 - [X] Burning component is replaced, meaning that units don't take damage while repeatedly being hit
 - [X] Flame turret flames should have limited lifespan / range
   - It's odd that the flames can travel across the map
+- [ ] Enemies dying from fire do not give bounty

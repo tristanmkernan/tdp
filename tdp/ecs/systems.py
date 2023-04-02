@@ -708,7 +708,9 @@ class BurningProcessor(esper.Processor):
                 enemy.take_damage(burning.damage)
 
                 if enemy.is_dead:
-                    self.world.delete_entity(enemy_ent)
+                    track_score_event(self.world, ScoreEventKind.EnemyKill)
+
+                    kill_enemy(self.world, enemy_ent)
 
                 burning.ticks += 1
 

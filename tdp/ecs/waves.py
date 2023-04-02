@@ -79,7 +79,7 @@ def generate_random_waves(count=99) -> list[SpawningWave]:
     waves = []
 
     for wave_no in range(count):
-        enemies_count = 10 + wave_no
+        enemies_count = 15 + wave_no
 
         if wave_no < 3:
             # training waves
@@ -90,11 +90,23 @@ def generate_random_waves(count=99) -> list[SpawningWave]:
             # ramp up
             default_wait = "M"
             enemies = ["G", "E"]
-            weights = [2, 1]
+            weights = [4, 1]
         elif wave_no < 18:
-            default_wait = "S"
+            default_wait = "M"
+            enemies = [
+                "G",
+                "E",
+                "C",
+            ]
+            weights = [3, 2, 1]
+        elif wave_no < 25:
+            default_wait = "M"
             enemies = ["E", "C"]
-            weights = [2, 1]
+            weights = [3, 1]
+        elif wave_no < 32:
+            default_wait = "M"
+            enemies = ["C"]
+            weights = [1]
         else:
             default_wait = "S"
             enemies = ["C"]
@@ -102,7 +114,7 @@ def generate_random_waves(count=99) -> list[SpawningWave]:
 
         enemies = random.choices(enemies, weights=weights, k=enemies_count)
 
-        wave_conf = "L" + default_wait.join(enemies) + "LLL"
+        wave_conf = "L" + default_wait.join(enemies) + "LLLLL"
 
         waves.append(parse_wave(wave_conf))
 
