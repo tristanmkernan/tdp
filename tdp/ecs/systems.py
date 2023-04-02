@@ -169,9 +169,19 @@ class SpawningProcessor(esper.Processor):
             case {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": enemy_kind}:
                 match enemy_kind:
                     case EnemyKind.Grunt:
-                        enemy = spawn_grunt(self.world, spawning_ent, assets=assets)
+                        enemy = spawn_grunt(
+                            self.world,
+                            spawning_ent,
+                            level=spawning.current_wave_index,
+                            assets=assets,
+                        )
                     case EnemyKind.Tank:
-                        enemy = spawn_tank(self.world, spawning_ent, assets=assets)
+                        enemy = spawn_tank(
+                            self.world,
+                            spawning_ent,
+                            level=spawning.current_wave_index,
+                            assets=assets,
+                        )
 
                 wave.enemy_spawn_count += 1
                 wave.advance()
@@ -685,6 +695,9 @@ class BurningProcessor(esper.Processor):
                     self.world.delete_entity(enemy_ent)
 
                 burning.ticks += 1
+
+            if burning.expired:
+                self.world.remove_component(enemy_ent, Burning)
 
 
 class EnemyStatusVisualEffectProcessor(esper.Processor):

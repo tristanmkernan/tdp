@@ -19,7 +19,6 @@ from .components import (
     PathGraph,
     PlayerInputMachine,
     PlayerResources,
-    RenderableExtra,
     ScoreTracker,
     TurretMachine,
     UnitPathing,
@@ -54,12 +53,47 @@ def create_scoreboard(world: esper.World):
     world.add_component(scoreboard, ScoreTracker())
 
 
-def spawn_tank(world: esper.World, spawn_point: int, *, assets: Assets):
-    return spawn_enemy(world, spawn_point, assets.tank, bounty=25, max_health=10)
+def spawn_tank(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
+    base_health = 100
+    per_level = 5
+
+    max_health = base_health + level * per_level
+
+    base_bounty = 25
+    bounty_per_level = 5
+
+    bounty = base_bounty + level * bounty_per_level
+
+    return spawn_enemy(
+        world, spawn_point, assets.tank, bounty=bounty, max_health=max_health
+    )
 
 
-def spawn_grunt(world: esper.World, spawn_point: int, *, assets: Assets):
-    return spawn_enemy(world, spawn_point, assets.grunt, bounty=5, max_health=5)
+def spawn_grunt(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
+    base_health = 30
+    per_level = 8
+
+    max_health = base_health + level * per_level
+
+    base_bounty = 5
+    bounty_per_level = 1
+
+    bounty = base_bounty + level * bounty_per_level
+
+    return spawn_enemy(
+        world, spawn_point, assets.grunt, bounty=bounty, max_health=max_health
+    )
+
+
+def spawn_elite(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
+    base_health = 30
+    per_level = 10
+
+    max_health = base_health + level * per_level
+
+    return spawn_enemy(
+        world, spawn_point, assets.elite, bounty=5, max_health=max_health
+    )
 
 
 def spawn_enemy(
@@ -126,13 +160,13 @@ def create_flame_turret(
     }
 
     base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 0,
+        TurretUpgradeablePropertyKind.Damage: 3,
         TurretUpgradeablePropertyKind.RateOfFire: 75.0,
         TurretUpgradeablePropertyKind.Range: 200.0,
     }
 
     stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.Damage: 3,
         TurretUpgradeablePropertyKind.RateOfFire: -5.0,
         TurretUpgradeablePropertyKind.Range: 25.0,
     }
@@ -218,13 +252,13 @@ def create_rocket_turret(
     }
 
     base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 3,
+        TurretUpgradeablePropertyKind.Damage: 15,
         TurretUpgradeablePropertyKind.RateOfFire: 2000.0,
         TurretUpgradeablePropertyKind.Range: 500.0,
     }
 
     stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 2,
+        TurretUpgradeablePropertyKind.Damage: 10,
         TurretUpgradeablePropertyKind.RateOfFire: -150.0,
         TurretUpgradeablePropertyKind.Range: 100.0,
     }
@@ -265,13 +299,13 @@ def create_bullet_turret(
     }
 
     base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 0,
+        TurretUpgradeablePropertyKind.Damage: 10,
         TurretUpgradeablePropertyKind.RateOfFire: 1000.0,
         TurretUpgradeablePropertyKind.Range: 200.0,
     }
 
     stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.Damage: 5,
         TurretUpgradeablePropertyKind.RateOfFire: -75.0,
         TurretUpgradeablePropertyKind.Range: 50.0,
     }
@@ -433,7 +467,7 @@ def create_flame(
                         # or adding more upgradeable properties custom per turret
                         damage=turret_machine.damage,
                         damage_tick_rate=500.0,
-                        duration=1_000.0,
+                        duration=3_000.0,
                     ),
                 )
             ],
