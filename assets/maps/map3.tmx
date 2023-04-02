@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.0" orientation="orthogonal" renderorder="right-down" width="15" height="15" tilewidth="64" tileheight="64" infinite="0" nextlayerid="4" nextobjectid="43">
+ <tileset firstgid="1" source="Kenney.tsx"/>
+ <layer id="1" name="Base" width="15" height="15">
+  <data encoding="csv">
+25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,
+232,232,211,255,255,255,255,255,255,255,255,255,255,255,255,
+25,25,233,208,209,209,209,209,209,209,209,209,209,209,209,
+25,25,233,231,25,25,25,25,25,25,25,25,25,25,25,
+25,25,233,254,255,255,255,255,255,255,255,255,212,25,25,
+25,25,234,209,209,209,209,209,209,209,209,210,231,25,25,
+25,25,25,25,25,25,25,25,25,25,25,233,231,25,25,
+25,232,211,255,255,255,255,255,255,255,255,256,231,25,25,
+25,25,233,208,209,209,209,209,209,209,209,209,235,25,25,
+25,25,233,231,25,25,25,25,25,25,25,25,25,25,25,
+25,25,233,254,255,255,255,255,255,255,255,255,255,212,25,
+25,25,234,209,209,209,209,209,209,209,209,209,210,231,25,
+25,25,25,25,25,25,25,25,25,25,25,25,233,231,25,
+25,25,25,25,25,25,25,25,25,25,25,25,233,231,25,
+25,25,25,25,25,25,25,25,25,25,25,25,233,231,25
+</data>
+ </layer>
+ <layer id="2" name="Environment" width="15" height="15">
+  <data encoding="csv">
+131,25,131,0,131,0,131,0,131,0,131,0,131,0,131,
+131,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+131,0,0,0,0,0,0,0,0,0,0,0,0,0,131,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+131,0,0,0,0,0,0,0,0,0,0,0,0,0,131,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+131,0,0,0,0,0,0,0,0,0,0,0,0,0,131,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+131,0,0,0,0,0,0,0,0,0,0,0,0,0,131,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+131,0,0,0,0,0,0,0,0,0,0,0,0,0,131,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+131,0,0,0,0,0,0,0,0,0,0,0,0,0,131,
+131,131,0,131,0,131,0,131,0,131,0,131,0,0,131
+</data>
+ </layer>
+ <objectgroup id="3" name="Objects">
+  <object id="1" name="PathStart" type="Path" x="928.407" y="125.46">
+   <point/>
+  </object>
+  <object id="2" type="Path" x="208.72" y="149.412">
+   <properties>
+    <property name="index" type="int" value="0"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="3" type="Path" x="206.439" y="299.964">
+   <properties>
+    <property name="index" type="int" value="1"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="4" type="Path" x="742.497" y="342.165">
+   <properties>
+    <property name="index" type="int" value="2"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="5" type="Path" x="740.216" y="496.139">
+   <properties>
+    <property name="index" type="int" value="3"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="6" type="Path" x="215.564" y="537.199">
+   <properties>
+    <property name="index" type="int" value="4"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="7" type="Path" x="212.142" y="678.627">
+   <properties>
+    <property name="index" type="int" value="5"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="8" type="Path" x="832.601" y="740.216">
+   <properties>
+    <property name="index" type="int" value="6"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="9" name="PathEnd" type="Path" x="785.838" y="889.628" width="88.9628" height="59.3085"/>
+  <object id="11" type="TurretBuildZone" gid="44" x="257.699" y="255.548" width="64" height="64"/>
+  <object id="12" type="TurretBuildZone" gid="44" x="384.3" y="258.84" width="64" height="64"/>
+  <object id="13" type="TurretBuildZone" gid="44" x="508.62" y="258.84" width="64" height="64"/>
+  <object id="14" type="TurretBuildZone" gid="44" x="642.064" y="258.84" width="64" height="64"/>
+  <object id="15" type="TurretBuildZone" gid="44" x="773.228" y="258.84" width="64" height="64"/>
+  <object id="16" type="TurretBuildZone" gid="44" x="835.958" y="383.16" width="64" height="64"/>
+  <object id="17" type="TurretBuildZone" gid="44" x="832.536" y="516.604" width="64" height="64"/>
+  <object id="18" type="TurretBuildZone" gid="44" x="644.345" y="447.031" width="64" height="64"/>
+  <object id="19" type="TurretBuildZone" gid="44" x="509.761" y="448.171" width="64" height="64"/>
+  <object id="20" type="TurretBuildZone" gid="44" x="383.16" y="447.031" width="64" height="64"/>
+  <object id="21" type="TurretBuildZone" gid="44" x="257.699" y="445.89" width="64" height="64"/>
+  <object id="22" type="TurretBuildZone" gid="44" x="62.6656" y="129.958" width="64" height="64"/>
+  <object id="23" type="TurretBuildZone" gid="44" x="64.9467" y="257.699" width="64" height="64"/>
+  <object id="24" type="TurretBuildZone" gid="44" x="60.3845" y="383.16" width="64" height="64"/>
+  <object id="25" type="TurretBuildZone" gid="44" x="62.6656" y="513.182" width="64" height="64"/>
+  <object id="26" type="TurretBuildZone" gid="44" x="62.6656" y="643.205" width="64" height="64"/>
+  <object id="27" type="TurretBuildZone" gid="44" x="60.3845" y="766.384" width="64" height="64"/>
+  <object id="28" type="TurretBuildZone" gid="44" x="642.635" y="643.205" width="64" height="64"/>
+  <object id="29" type="TurretBuildZone" gid="44" x="508.051" y="644.345" width="64" height="64"/>
+  <object id="30" type="TurretBuildZone" gid="44" x="381.45" y="643.205" width="64" height="64"/>
+  <object id="31" type="TurretBuildZone" gid="44" x="255.989" y="642.064" width="64" height="64"/>
+  <object id="32" type="TurretBuildZone" gid="44" x="706.505" y="832.537" width="64" height="64"/>
+  <object id="33" type="TurretBuildZone" gid="44" x="571.921" y="833.677" width="64" height="64"/>
+  <object id="34" type="TurretBuildZone" gid="44" x="445.32" y="832.537" width="64" height="64"/>
+  <object id="35" type="TurretBuildZone" gid="44" x="319.859" y="831.396" width="64" height="64"/>
+  <object id="36" type="TurretBuildZone" gid="44" x="835.958" y="638.643" width="64" height="64"/>
+  <object id="37" type="TurretBuildZone" gid="44" x="192.688" y="831.396" width="64" height="64"/>
+  <object id="38" type="TurretBuildZone" gid="44" x="644.63" y="899.829" width="64" height="64"/>
+  <object id="39" type="TurretBuildZone" gid="44" x="510.046" y="900.969" width="64" height="64"/>
+  <object id="40" type="TurretBuildZone" gid="44" x="383.445" y="899.829" width="64" height="64"/>
+  <object id="41" type="TurretBuildZone" gid="44" x="257.984" y="898.688" width="64" height="64"/>
+  <object id="42" type="TurretBuildZone" gid="44" x="130.813" y="898.688" width="64" height="64"/>
+ </objectgroup>
+</map>

@@ -40,7 +40,7 @@
 </data>
  </layer>
  <objectgroup id="3" name="Objects">
-  <object id="8" type="TurretBuildZone" gid="44" x="576" y="384" width="64" height="64"/>
+  <object id="8" template="turretbuildzone.tx" type="TurretBuildZone" x="576" y="384"/>
   <object id="9" name="PathStart" type="Path" x="26.8938" y="152.398">
    <properties>
     <property name="next" type="object" value="10"/>

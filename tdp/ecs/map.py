@@ -14,16 +14,15 @@ from .components import (
     TurretBuildZone,
 )
 from .enums import RenderableOrder, ObjectKind
-from .waves import generate_waves
+from .waves import generate_random_waves, generate_waves
 
 from . import esper
 
 logger = logging.getLogger(__name__)
 
 
-def load_map(world: esper.World):
-    # TODO parameterize file
-    tiled_map = load_pygame("assets/maps/map1.tmx")
+def load_map(world: esper.World, map_name: str):
+    tiled_map = load_pygame(f"assets/maps/{map_name}.tmx")
 
     # base layer
     base_layer = tiled_map.get_layer_by_name("Base")
@@ -91,7 +90,7 @@ def load_map(world: esper.World):
     vertices.append(Vector2(end_bbox.rect.centerx, end_bbox.rect.centery))
 
     world.create_entity(
-        Spawning(waves=generate_waves()),
+        Spawning(waves=generate_random_waves()),
         BoundingBox(rect=Rect(start_obj.x, start_obj.y, 0, 0)),
         PathGraph(vertices=vertices),
     )

@@ -42,6 +42,8 @@ from .entities import (
     create_bullet_turret,
     create_rocket_turret,
     kill_enemy,
+    spawn_commando,
+    spawn_elite,
     spawn_grunt,
     spawn_tank,
     sync_selected_turret_range_extra_renderable,
@@ -177,6 +179,20 @@ class SpawningProcessor(esper.Processor):
                         )
                     case EnemyKind.Tank:
                         enemy = spawn_tank(
+                            self.world,
+                            spawning_ent,
+                            level=spawning.current_wave_index,
+                            assets=assets,
+                        )
+                    case EnemyKind.Elite:
+                        enemy = spawn_elite(
+                            self.world,
+                            spawning_ent,
+                            level=spawning.current_wave_index,
+                            assets=assets,
+                        )
+                    case EnemyKind.Commando:
+                        enemy = spawn_commando(
                             self.world,
                             spawning_ent,
                             level=spawning.current_wave_index,

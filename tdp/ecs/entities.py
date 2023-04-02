@@ -75,8 +75,8 @@ def spawn_grunt(world: esper.World, spawn_point: int, level: int, *, assets: Ass
 
     max_health = base_health + level * per_level
 
-    base_bounty = 5
-    bounty_per_level = 1
+    base_bounty = 3
+    bounty_per_level = 0
 
     bounty = base_bounty + level * bounty_per_level
 
@@ -86,13 +86,34 @@ def spawn_grunt(world: esper.World, spawn_point: int, level: int, *, assets: Ass
 
 
 def spawn_elite(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
-    base_health = 30
-    per_level = 10
+    base_health = 50
+    per_level = 25
 
     max_health = base_health + level * per_level
 
+    base_bounty = 10
+    bounty_per_level = 0
+
+    bounty = base_bounty + level * bounty_per_level
+
     return spawn_enemy(
-        world, spawn_point, assets.elite, bounty=5, max_health=max_health
+        world, spawn_point, assets.elite, bounty=bounty, max_health=max_health
+    )
+
+
+def spawn_commando(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
+    base_health = 80
+    per_level = 40
+
+    max_health = base_health + level * per_level
+
+    base_bounty = 15
+    bounty_per_level = 0
+
+    bounty = base_bounty + level * bounty_per_level
+
+    return spawn_enemy(
+        world, spawn_point, assets.commando, bounty=bounty, max_health=max_health
     )
 
 

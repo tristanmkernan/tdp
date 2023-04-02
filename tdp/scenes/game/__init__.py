@@ -12,10 +12,21 @@ from tdp.scenes.types import Scene
 
 
 class GameScene(Scene):
+    def __init__(
+        self,
+        screen: pygame.Surface,
+        gui_manager: pygame_gui.UIManager,
+        clock: pygame.time.Clock,
+        **kwargs,
+    ) -> None:
+        self.map_name = kwargs.get("map_name")
+
+        super().__init__(screen, gui_manager, clock, **kwargs)
+
     def setup(self):
         self.gui_elements = build_gui(self.gui_manager)
         self.assets = load_assets()
-        self.world = build_world()
+        self.world = build_world(self.map_name)
 
     def run(self):
         running = True

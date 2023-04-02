@@ -28,11 +28,23 @@
             "selectedLayer": 0,
             "viewCenter": {
                 "x": 467.05477010811455,
-                "y": 434.5491267672567
+                "y": 433.4085778781038
+            }
+        },
+        "map3.tmx": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 0.8767708333333334,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 480.74135677794925,
+                "y": 479.03053344422
             }
         }
     },
     "last.imagePath": "/Users/tristan/prog/games/tdp/assets/maps",
+    "last.objectTemplatePath": "/Users/tristan/prog/games/tdp/assets/maps",
     "map.height": 15,
     "map.lastUsedFormat": "tmx",
     "map.tileHeight": 64,

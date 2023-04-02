@@ -22,6 +22,7 @@ class Scene(ABC):
         screen: pygame.Surface,
         gui_manager: pygame_gui.UIManager,
         clock: pygame.time.Clock,
+        **kwargs
     ) -> None:
         self.screen = screen
         self.gui_manager = gui_manager

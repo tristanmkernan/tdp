@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 @dataclasses.dataclass
 class Assets:
     grunt: pygame.Surface
+    elite: pygame.Surface
+    commando: pygame.Surface
     tank: pygame.Surface
 
     bullet_turret: pygame.Surface
@@ -34,6 +36,8 @@ class Assets:
 def load_assets() -> Assets:
     return Assets(
         grunt=pygame.image.load("assets/enemies/grunt.png"),
+        elite=pygame.image.load("assets/enemies/elite.png"),
+        commando=pygame.image.load("assets/enemies/commando.png"),
         tank=pygame.image.load("assets/enemies/tank.png"),
         bullet_turret=pygame.image.load("assets/turrets/mach1.png"),
         bullet_turret__firing=pygame.image.load("assets/turrets/mach1--firing.png"),

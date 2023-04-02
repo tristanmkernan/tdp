@@ -1,3 +1,5 @@
+import random
+
 from .components import SpawningWave
 from .enums import EnemyKind, SpawningWaveStepKind
 from .types import SpawningWaveStep
@@ -8,6 +10,8 @@ from .types import SpawningWaveStep
 # S: short wait
 # V: very short wait
 # G: grunt
+# E: elite
+# C: commando
 # T: tank
 # P: plane
 
@@ -16,7 +20,7 @@ VERY_SHORT_WAIT = SHORT_WAIT / 2.0
 MEDIUM_WAIT = SHORT_WAIT * 2.5
 LONG_WAIT = SHORT_WAIT * 5.0
 
-# TODO infinite waves
+# TODO infinite waves or limit to 99 waves
 raw_waves = """
 LGMGMGMGMGMGMGMGMGMGMGMGL
 LGMGMGMGMGMGMGMGMGMGMGMGL
@@ -71,7 +75,51 @@ def generate_waves() -> list[SpawningWave]:
     return parse_waves(raw_waves)
 
 
+def generate_random_waves(count=99) -> list[SpawningWave]:
+    waves = []
+
+    for wave_no in range(count):
+        enemies_count = 10 + wave_no
+
+        if wave_no < 3:
+            # training waves
+            default_wait = "L"
+            enemies = ["G"]
+            weights = [1]
+        elif wave_no < 10:
+            # ramp up
+            default_wait = "M"
+            enemies = ["G", "E"]
+            weights = [2, 1]
+        elif wave_no < 18:
+            default_wait = "S"
+            enemies = ["E", "C"]
+            weights = [2, 1]
+        else:
+            default_wait = "S"
+            enemies = ["C"]
+            weights = [1]
+
+        enemies = random.choices(enemies, weights=weights, k=enemies_count)
+
+        wave_conf = "L" + default_wait.join(enemies) + "LLL"
+
+        waves.append(parse_wave(wave_conf))
+
+    return waves
+
+
 def parse_waves(wave_conf: str) -> list[SpawningWave]:
+    spawning_waves: list[SpawningWave] = []
+
+    for wave_conf_row in wave_conf.strip().split("\n"):
+        # TODO counting total enemy spawns could be in post init of SpawningWave
+        spawning_waves.append(parse_wave(wave_conf_row))
+
+    return spawning_waves
+
+
+def parse_wave(wave_conf: str) -> SpawningWave:
     wave_step_map: dict[str, SpawningWaveStep] = {
         "L": {"kind": SpawningWaveStepKind.Wait, "duration": LONG_WAIT},
         "M": {"kind": SpawningWaveStepKind.Wait, "duration": MEDIUM_WAIT},
@@ -79,19 +127,17 @@ def parse_waves(wave_conf: str) -> list[SpawningWave]:
         "V": {"kind": SpawningWaveStepKind.Wait, "duration": VERY_SHORT_WAIT},
         "G": {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": EnemyKind.Grunt},
         "T": {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": EnemyKind.Tank},
+        "E": {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": EnemyKind.Elite},
+        "C": {
+            "kind": SpawningWaveStepKind.SpawnEnemy,
+            "enemy_kind": EnemyKind.Commando,
+        },
     }
 
-    spawning_waves: list[SpawningWave] = []
+    wave = [wave_step_map[c] for c in wave_conf]
+    total_enemy_spawns = sum(
+        1 for step in wave if step["kind"] == SpawningWaveStepKind.SpawnEnemy
+    )
 
-    for wave_conf_row in wave_conf.strip().split("\n"):
-        wave = [wave_step_map[c] for c in wave_conf_row]
-        total_enemy_spawns = sum(
-            1 for step in wave if step["kind"] == SpawningWaveStepKind.SpawnEnemy
-        )
-
-        # TODO counting total enemy spawns could be in post init of SpawningWave
-        spawning_waves.append(
-            SpawningWave(wave=wave, total_enemy_spawns=total_enemy_spawns)
-        )
-
-    return spawning_waves
+    # TODO counting total enemy spawns could be in post init of SpawningWave
+    return SpawningWave(wave=wave, total_enemy_spawns=total_enemy_spawns)

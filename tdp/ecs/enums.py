@@ -62,6 +62,8 @@ class TurretState(enum.IntEnum):
 
 class EnemyKind(enum.IntEnum):
     Grunt = enum.auto()
+    Elite = enum.auto()
+    Commando = enum.auto()
     Tank = enum.auto()
 
 

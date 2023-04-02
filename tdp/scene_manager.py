@@ -32,7 +32,7 @@ def start_app(
     starting_scene = scenes_map[initial_scene_kind]
 
     current_scene: Scene = starting_scene(
-        screen=screen, gui_manager=gui_manager, clock=clock
+        screen=screen, gui_manager=gui_manager, clock=clock, map_name=initial_map
     )
 
     running = True
@@ -45,7 +45,10 @@ def start_app(
             case {"kind": SceneEventKind.ChangeScene, "to": scene_kind}:
                 current_scene.cleanup()
                 current_scene = scenes_map[scene_kind](
-                    screen=screen, gui_manager=gui_manager, clock=clock
+                    screen=screen,
+                    gui_manager=gui_manager,
+                    clock=clock,
+                    map_name=initial_map,
                 )
             case _:
                 pass
