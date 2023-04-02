@@ -4,7 +4,11 @@ import pygame
 import pygame.constants
 from pygame import Vector2, Rect
 
-from tdp.constants import MAP_HEIGHT, MAP_WIDTH
+from tdp.constants import (
+    MAP_HEIGHT,
+    MAP_WIDTH,
+    PygameCustomEventType,
+)
 
 from .assets import Assets
 from .gui import GuiElements, sync_selected_turret_gui
@@ -88,7 +92,7 @@ def add_systems(world: esper.World):
     world.add_processor(OutOfBoundsProcessor())
     world.add_processor(DamagesEnemyProcessor())
     world.add_processor(PlayerInputProcessor())
-    #    world.add_processor(ScoreTimeTrackerProcessor())
+    world.add_processor(ScoreTimeTrackerProcessor())
     world.add_processor(LifetimeProcessor())
     world.add_processor(PathingProcessor())
     world.add_processor(DespawningProcessor())
@@ -96,6 +100,28 @@ def add_systems(world: esper.World):
     world.add_processor(AnimationProcessor())
     world.add_processor(RotationProcessor())
     world.add_processor(RenderingProcessor())
+
+
+# TODO would like this in a different module
+def remove_game_over_systems(world: esper.World):
+    # remove spawning system
+    world.remove_processor(SpawningProcessor)
+
+
+def set_game_over(world: esper.World, gui_elements: GuiElements):
+    remove_game_over_systems(world)
+
+    # sync player state
+    player_input_machine = world.get_component(PlayerInputMachine)[0][1]
+
+    player_input_machine.state = PlayerInputState.GameOver
+
+    # sync ui
+    score_tracker = world.get_component(ScoreTracker)[0][1]
+
+    gui_elements.game_over_score_label.set_text(f"Score: {score_tracker.total_score}")
+
+    gui_elements.game_over_window.show()
 
 
 class MovementProcessor(esper.Processor):
@@ -281,6 +307,7 @@ class PlayerInputProcessor(esper.Processor):
                         player_actions.append(action)
 
         acceptable_actions: dict[PlayerInputState, set[PlayerActionKind]] = {
+            PlayerInputState.GameOver: {PlayerActionKind.ExitGame},
             PlayerInputState.Idle: {
                 PlayerActionKind.SetTurretToBuild,
                 PlayerActionKind.SelectTurret,
@@ -305,6 +332,10 @@ class PlayerInputProcessor(esper.Processor):
                 continue
 
             match action:
+                case {"kind": PlayerActionKind.ExitGame}:
+                    pygame.event.post(
+                        pygame.event.Event(PygameCustomEventType.ChangeScene)
+                    )
                 case {"kind": PlayerActionKind.SelectTurret, "ent": ent}:
                     player_input_machine.state = PlayerInputState.SelectingTurret
                     player_input_machine.selected_turret = ent
@@ -456,8 +487,9 @@ class PathingProcessor(esper.Processor):
             # update velocity
             target_vertex = pathing.current_target
 
-            # TODO speed should be determined by base velocity
+            # TODO speed should be determined by base velocity, scalable
             vec = (target_vertex - Vector2(*bbox.rect.center)).normalize()
+
             vec.scale_to_length(0.1)
 
             vel.vec = vec
@@ -467,9 +499,10 @@ class PathingProcessor(esper.Processor):
 
 
 class DespawningProcessor(esper.Processor):
-    def process(self, *args, delta, **kwargs):
+    def process(self, *args, delta: float, gui_elements: GuiElements, **kwargs):
         # TODO clean this up
         # could be more efficient than N^2
+        # would be cool to have intersection done once per frame
         for _, (despawning, despawn_bbox) in self.world.get_components(
             Despawning, BoundingBox
         ):
@@ -482,6 +515,9 @@ class DespawningProcessor(esper.Processor):
                     track_score_event(self.world, ScoreEventKind.EnemyDespawn)
 
                     self.world.delete_entity(ent)
+
+                    # game over
+                    set_game_over(self.world, gui_elements)
 
 
 class RotationProcessor(esper.Processor):

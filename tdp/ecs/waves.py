@@ -6,17 +6,19 @@ from .types import SpawningWaveStep
 # L: long wait
 # M: medium wait
 # S: short wait
+# V: very short wait
 # G: grunt
 # T: tank
 # P: plane
 
 SHORT_WAIT = 1000.0
+VERY_SHORT_WAIT = SHORT_WAIT / 2.0
 MEDIUM_WAIT = SHORT_WAIT * 2.5
 LONG_WAIT = SHORT_WAIT * 5.0
 
 # TODO more waves
 raw_waves = """
-LGLGLGLGLGLGLGLGL
+SGLGLGLGLGLGLGLGL
 LGMGMGMGMGMGMGMGL
 LGSGSGSGSGSGSGSGL
 LGSGSGSGSGSGSGSGL
@@ -43,6 +45,7 @@ def parse_waves(wave_conf: str) -> list[SpawningWave]:
         "L": {"kind": SpawningWaveStepKind.Wait, "duration": LONG_WAIT},
         "M": {"kind": SpawningWaveStepKind.Wait, "duration": MEDIUM_WAIT},
         "S": {"kind": SpawningWaveStepKind.Wait, "duration": SHORT_WAIT},
+        "V": {"kind": SpawningWaveStepKind.Wait, "duration": VERY_SHORT_WAIT},
         "G": {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": EnemyKind.Grunt},
         "T": {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": EnemyKind.Tank},
     }

@@ -25,6 +25,8 @@ class PlayerActionKind(enum.IntEnum):
 
     UpgradeTurretProperty = enum.auto()
 
+    ExitGame = enum.auto()
+
 
 class RenderableExtraOrder(enum.IntEnum):
     Under = -1
@@ -77,6 +79,7 @@ class TurretUpgradeablePropertyKind(enum.IntEnum):
 
 
 class PlayerInputState(enum.IntEnum):
+    GameOver = enum.auto()
     Idle = enum.auto()
     BuildingTurret = enum.auto()
     SelectingTurret = enum.auto()

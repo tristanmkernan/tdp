@@ -104,6 +104,9 @@ def kill_enemy(world: esper.World, enemy_ent: int):
 
     player_resources.money += enemy.bounty
 
+    # increase score
+    track_score_event(world, ScoreEventKind.EnemyKill)
+
 
 def create_flame_turret(
     world: esper.World, build_zone_ent: int, *, assets: Assets
@@ -579,9 +582,6 @@ def create_player_resources(world: esper.World):
 
 def track_score_event(world: esper.World, kind: ScoreEventKind):
     _, score_tracker = world.get_component(ScoreTracker)[0]
-
-    score_tracker.recent_events.insert(0, kind)
-    score_tracker.recent_events = score_tracker.recent_events[:10]
 
     score_tracker.scores[kind] += 1
 

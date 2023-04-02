@@ -1,12 +1,11 @@
 from collections import defaultdict
-import dataclasses
-
 from typing import Any, Protocol
+
+import dataclasses
 
 from pygame import Rect, Vector2, Surface
 
-from tdp.ecs.assets import Assets
-
+from .assets import Assets
 from .enums import (
     DamagesEnemyOnCollisionBehavior,
     RenderableExtraKind,
@@ -165,9 +164,12 @@ class DamagesEnemy:
 @dataclasses.dataclass
 class ScoreTracker:
     scores: dict[ScoreEventKind, int] = dataclasses.field(
-        default_factory=lambda: {kind: 0 for kind in ScoreEventKind}
+        default_factory=lambda: defaultdict(int)
     )
-    recent_events: list[ScoreEventKind] = dataclasses.field(default_factory=list)
+
+    @property
+    def total_score(self):
+        return self.scores[ScoreEventKind.EnemyKill]
 
 
 @dataclasses.dataclass
@@ -367,7 +369,7 @@ class Frozen:
     def expired(self):
         return self.elapsed >= self.duration
 
-    def reapply(self, other: "Burning"):
+    def reapply(self, other: "Frozen"):
         # dont want to interrupt damage ticks, want to extend duration
         self.duration = self.elapsed + other.duration
 

@@ -41,6 +41,10 @@ class GuiElements:
     selected_turret_range_label: pygame_gui.elements.UILabel
     selected_turret_range_upgrade_button: pygame_gui.elements.UIButton
 
+    game_over_window: pygame_gui.elements.UIWindow
+    game_over_score_label: pygame_gui.elements.UILabel
+    game_over_main_menu_button: pygame_gui.elements.UIButton
+
 
 def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
     panel = pygame_gui.elements.UIPanel(
@@ -191,11 +195,38 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
         container=selected_turret_panel,
     )
 
+    game_over_window = pygame_gui.elements.UIPanel(
+        relative_rect=pygame.Rect((300, 300), (300, 180)),
+        manager=manager,
+    )
+
+    game_over_title_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((10, 10), (280, 30)),
+        text="Game Over",
+        manager=manager,
+        container=game_over_window,
+    )
+
+    game_over_score_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((10, 50), (280, 30)),
+        text="Score: ?",
+        manager=manager,
+        container=game_over_window,
+    )
+
+    game_over_main_menu_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((10, 90), (280, 30)),
+        text="Main Menu",
+        manager=manager,
+        container=game_over_window,
+    )
+
     # TODO quit button
 
     # TODO pause button
 
     # hidden by default
+    game_over_window.hide()
     selected_turret_panel.hide()
 
     return GuiElements(
@@ -217,6 +248,9 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
         selected_turret_rate_of_fire_upgrade_button=selected_turret_rate_of_fire_upgrade_button,
         selected_turret_range_label=selected_turret_range_label,
         selected_turret_range_upgrade_button=selected_turret_range_upgrade_button,
+        game_over_window=game_over_window,
+        game_over_score_label=game_over_score_label,
+        game_over_main_menu_button=game_over_main_menu_button,
     )
 
 

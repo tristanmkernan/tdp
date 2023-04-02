@@ -1,11 +1,12 @@
 import pygame
 import pygame_gui
 
+from tdp.constants import PygameCustomEventType
 from tdp.ecs.assets import load_assets
 from tdp.ecs.enums import InputEventKind
 from tdp.ecs.gui import build_gui, cleanup_gui
 from tdp.ecs.world import build_world
-from tdp.scenes.enums import SceneEventKind
+from tdp.scenes.enums import SceneEventKind, SceneKind
 
 from tdp.scenes.types import Scene
 
@@ -51,6 +52,11 @@ class GameScene(Scene):
                                 "ui_element": event.ui_element,
                             }
                         )
+                    case PygameCustomEventType.ChangeScene:
+                        return {
+                            "kind": SceneEventKind.ChangeScene,
+                            "to": SceneKind.Main,
+                        }
 
                 self.gui_manager.process_events(event)
 

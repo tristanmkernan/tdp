@@ -18,6 +18,7 @@ def build_world() -> esper.World:
     # add entities
     load_map(world)
 
+    # TODO player components should be attached to a player entity
     create_scoreboard(world)
 
     create_player_input(world)

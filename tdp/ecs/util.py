@@ -69,6 +69,10 @@ def get_player_action_for_button_press(
                 "kind": PlayerActionKind.UpgradeTurretProperty,
                 "turret_property": TurretUpgradeablePropertyKind.Range,
             }
+        case gui_elements.game_over_main_menu_button:
+            return {
+                "kind": PlayerActionKind.ExitGame,
+            }
 
 
 def get_closest_enemy(
