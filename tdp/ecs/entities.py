@@ -661,11 +661,15 @@ def upgrade_turret(
 
 def sync_selected_turret_range_extra_renderable(
     world: esper.World,
-    turret_ent: int,
+    turret_ent: int | None,
 ) -> None:
     # hide all other range extra renderables
     for _, (_, other_renderable) in world.get_components(TurretMachine, Renderable):
         other_renderable.extras.pop(RenderableExtraKind.TurretRange, None)
+
+    # add selected turret range
+    if turret_ent is None:
+        return
 
     turret_machine = world.component_for_entity(turret_ent, TurretMachine)
     renderable = world.component_for_entity(turret_ent, Renderable)

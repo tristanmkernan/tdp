@@ -42,12 +42,12 @@
 - [ ] Research system for unlocking turret types and upgrades
 - [X] Game over
 - [ ] Sell / scrap turrets
-- [ ] Temporarily hide frost turret
+- [X] Temporarily hide frost turret
   - Until status effect interactions / game design is worked out
 - [ ] Pause
 - [ ] Turret stats
   - [ ] Lifetime damage
-- [ ] Deselect turret
+- [X] Deselect turret
 - [ ] Turret target priority
   - Closest, furthest, lowest health, highest max health (i.e. enemy class)
 

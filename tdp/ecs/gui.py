@@ -229,6 +229,9 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
     game_over_window.hide()
     selected_turret_panel.hide()
 
+    ## temporarily disabled
+    frost_turret_build_button.hide()
+
     return GuiElements(
         panel=panel,
         title=title,

@@ -363,8 +363,13 @@ class PlayerInputProcessor(esper.Processor):
                         pygame.event.Event(PygameCustomEventType.ChangeScene)
                     )
                 case {"kind": PlayerActionKind.SelectTurret, "ent": ent}:
-                    player_input_machine.state = PlayerInputState.SelectingTurret
-                    player_input_machine.selected_turret = ent
+                    # toggle selected turret
+                    if ent == player_input_machine.selected_turret:
+                        player_input_machine.state = PlayerInputState.Idle
+                        player_input_machine.selected_turret = None
+                    else:
+                        player_input_machine.state = PlayerInputState.SelectingTurret
+                        player_input_machine.selected_turret = ent
 
                     changed_selected_turret = True
 
@@ -466,16 +471,16 @@ class PlayerInputProcessor(esper.Processor):
                         gui_button.enable()
 
         if changed_selected_turret:
+            # sync range ring extra renderable for turret
+            sync_selected_turret_range_extra_renderable(
+                self.world,
+                player_input_machine.selected_turret,
+            )
+
             if player_input_machine.selected_turret:
                 # update selected turret ui
                 sync_selected_turret_gui(
                     self.world, player_input_machine.selected_turret, gui_elements
-                )
-
-                # sync range ring extra renderable for turret
-                sync_selected_turret_range_extra_renderable(
-                    self.world,
-                    player_input_machine.selected_turret,
                 )
 
                 gui_elements.selected_turret_panel.show()
