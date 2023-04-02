@@ -182,7 +182,7 @@ def create_flame_turret(
 
     base_stats = {
         TurretUpgradeablePropertyKind.Damage: 3,
-        TurretUpgradeablePropertyKind.RateOfFire: 75.0,
+        TurretUpgradeablePropertyKind.RateOfFire: 25.0,
         TurretUpgradeablePropertyKind.Range: 200.0,
     }
 
@@ -453,10 +453,10 @@ def create_flame(
     ).normalize()
 
     # introduce random rotation, flame turret creates "cone" of flame
-    # +15, -15 deg range (30 deg total cone)
-    vec = vec.rotate(random.uniform(-15.0, 15.0))
+    # +30, -30 deg range (60 deg total cone)
+    vec = vec.rotate(random.uniform(-30.0, 30.0))
 
-    speed = 0.35
+    speed = 0.20
     vec.scale_to_length(speed)
 
     duration = turret_machine.range / speed
@@ -464,7 +464,7 @@ def create_flame(
     # flame should spawn outside turret, not inside
     # let's adjust position along target vector
     turret_pos_offset = vec.copy()
-    turret_pos_offset.scale_to_length(64)
+    turret_pos_offset.scale_to_length(40)
 
     flame_center = Vector2(turret_bbox.rect.center) + turret_pos_offset
 
@@ -479,6 +479,7 @@ def create_flame(
         TimeToLive(duration=duration),
         DamagesEnemy(
             damage=0,
+            pierces=9999,
             effects=[
                 DamagesEnemyEffect(
                     kind=DamagesEnemyEffectKind.AddsComponent,
