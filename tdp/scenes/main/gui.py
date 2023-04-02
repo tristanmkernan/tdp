@@ -16,7 +16,7 @@ class GuiElements:
     quit_button: pygame_gui.elements.UIButton
 
 
-def build_gui(gui_manager: pygame_gui.UIManager) -> GuiElements:
+def build_gui(gui_manager: pygame_gui.UIManager, map_names: list[str]) -> GuiElements:
     el_width, el_height = 400, 30
     margin = 10
     offset = el_height + margin
@@ -39,9 +39,8 @@ def build_gui(gui_manager: pygame_gui.UIManager) -> GuiElements:
     )
 
     map_selection_dropdown = pygame_gui.elements.UIDropDownMenu(
-        # TODO
-        ["Map 1", "Map2"],
-        "Map 1",
+        map_names,
+        map_names[0],
         relative_rect=pygame.Rect(center_x, center_y + offset, el_width, el_height),
         manager=gui_manager,
         container=panel,

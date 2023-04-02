@@ -16,7 +16,7 @@
 - [-] General UI work
   - [X] Main screen
   - [ ] High scores
-  - [ ] Game over
+  - [X] Game over
   - [X] Map selection
 - [-] More turret types [2/3]
   - [X] Rocket
@@ -40,7 +40,14 @@
   - Maybe health generally increases over time?
   - Or just stick to different unit types
 - [ ] Research system for unlocking turret types and upgrades
-- [ ] Game over
+- [X] Game over
+- [ ] Sell / scrap turrets
+- [ ] Temporarily hide frost turret
+  - Until status effect interactions / game design is worked out
+- [ ] Pause
+- [ ] Turret stats
+  - [ ] Lifetime damage
+- [ ] Deselect turret
 
 * Bugs
 

@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_map(world: esper.World, map_name: str):
-    tiled_map = load_pygame(f"assets/maps/{map_name}.tmx")
+    tiled_map = load_pygame(f"assets/maps/{map_name}.tdp.tmx")
 
     # base layer
     base_layer = tiled_map.get_layer_by_name("Base")

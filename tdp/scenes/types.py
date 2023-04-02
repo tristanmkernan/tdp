@@ -6,13 +6,13 @@ import pygame
 import pygame_gui
 
 
-from .enums import SceneEventKind
+from .enums import SceneEventKind, SceneKind
 
 
 class SceneEvent(TypedDict):
     kind: SceneEventKind
 
-    to: NotRequired["Scene"]
+    to: NotRequired[SceneKind]
     map: NotRequired[str]
 
 

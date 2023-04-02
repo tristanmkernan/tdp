@@ -41,6 +41,28 @@
                 "x": 480.74135677794925,
                 "y": 479.03053344422
             }
+        },
+        "tutorial.tdp.tmx": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 0.6693,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 608.8450620050799,
+                "y": 415.3593306439564
+            }
+        },
+        "tutorial.tmx": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 0.6693,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 608.8450620050799,
+                "y": 415.3593306439564
+            }
         }
     },
     "last.imagePath": "/Users/tristan/prog/games/tdp/assets/maps",

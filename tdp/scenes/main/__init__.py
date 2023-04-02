@@ -1,3 +1,5 @@
+import glob
+
 import pygame
 import pygame_gui
 
@@ -7,9 +9,23 @@ from tdp.scenes.types import Scene
 from .gui import build_gui, cleanup_gui
 
 
+def get_map_names() -> list[str]:
+    extension = ".tdp.tmx"
+
+    folder = "./assets/maps/"
+
+    map_names = []
+
+    for filename in glob.glob(f"{folder}*{extension}"):
+        map_names.append(filename.rsplit("/", 1)[1].removesuffix(extension))
+
+    return map_names
+
+
 class MainScene(Scene):
     def setup(self):
-        self.gui_elements = build_gui(self.gui_manager)
+        map_names = get_map_names()
+        self.gui_elements = build_gui(self.gui_manager, map_names)
 
     def run(self):
         running = True
