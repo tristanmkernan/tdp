@@ -22,15 +22,5 @@
       "filled_bar": "#f4251b",
       "unfilled_bar": "#CCCCCC"
     }
-  },
-  "@turret-build-button--unselected": {
-    "colours": {
-
-    }
-  },
-  "@turret-build-button--selected": {
-    "colours": {
-
-    }
   }
 }

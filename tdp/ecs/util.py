@@ -6,7 +6,7 @@ from tdp.ecs.gui import GuiElements
 
 from .components import BoundingBox, TurretBuildZone, Enemy, TurretMachine
 from .types import PlayerAction
-from .enums import PlayerActionKind, TurretKind, TurretUpgradeablePropertyKind
+from .enums import PlayerActionKind, enabled_turret_kinds, TurretUpgradeablePropertyKind
 
 from . import esper
 
@@ -29,45 +29,33 @@ def get_player_action_for_click(world: esper.World, pos) -> PlayerAction | None:
 def get_player_action_for_button_press(
     world: esper.World, ui_element, gui_elements: GuiElements
 ) -> PlayerAction | None:
+    for turret_kind in enabled_turret_kinds:
+        if ui_element == gui_elements.turret_build_buttons[turret_kind]:
+            return {
+                "kind": PlayerActionKind.SetTurretToBuild,
+                "turret_kind": turret_kind,
+            }
+
+    for upgradeable_property in TurretUpgradeablePropertyKind:
+        if (
+            ui_element
+            == gui_elements.selected_turret_property_upgrade_buttons[
+                upgradeable_property
+            ]
+        ):
+            return {
+                "kind": PlayerActionKind.UpgradeTurretProperty,
+                "turret_property": upgradeable_property,
+            }
+
     match ui_element:
-        case gui_elements.basic_turret_build_button:
+        case gui_elements.selected_turret_sell_button:
             return {
-                "kind": PlayerActionKind.SetTurretToBuild,
-                "turret_kind": TurretKind.Bullet,
-            }
-        case gui_elements.flame_turret_build_button:
-            return {
-                "kind": PlayerActionKind.SetTurretToBuild,
-                "turret_kind": TurretKind.Flame,
-            }
-        case gui_elements.frost_turret_build_button:
-            return {
-                "kind": PlayerActionKind.SetTurretToBuild,
-                "turret_kind": TurretKind.Frost,
-            }
-        case gui_elements.rocket_turret_build_button:
-            return {
-                "kind": PlayerActionKind.SetTurretToBuild,
-                "turret_kind": TurretKind.Rocket,
+                "kind": PlayerActionKind.SellTurret,
             }
         case gui_elements.clear_turret_build_button:
             return {
                 "kind": PlayerActionKind.ClearTurretToBuild,
-            }
-        case gui_elements.selected_turret_damage_upgrade_button:
-            return {
-                "kind": PlayerActionKind.UpgradeTurretProperty,
-                "turret_property": TurretUpgradeablePropertyKind.Damage,
-            }
-        case gui_elements.selected_turret_rate_of_fire_upgrade_button:
-            return {
-                "kind": PlayerActionKind.UpgradeTurretProperty,
-                "turret_property": TurretUpgradeablePropertyKind.RateOfFire,
-            }
-        case gui_elements.selected_turret_range_upgrade_button:
-            return {
-                "kind": PlayerActionKind.UpgradeTurretProperty,
-                "turret_property": TurretUpgradeablePropertyKind.Range,
             }
         case gui_elements.game_over_main_menu_button:
             return {

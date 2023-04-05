@@ -13,6 +13,8 @@ class Assets:
     commando: pygame.Surface
     tank: pygame.Surface
 
+    turret_build_zone: pygame.Surface
+
     bullet_turret: pygame.Surface
     bullet_turret__firing: pygame.Surface
 
@@ -20,10 +22,11 @@ class Assets:
     flame_particle: pygame.Surface
 
     frost_turret: pygame.Surface
-    # frost_missile: pygame.Surface
     frost_missile_frames: list[pygame.Surface]
-    # frost_missile_explosion: pygame.Surface
     frost_missile_explosion_frames: list[pygame.Surface]
+
+    lightning_turret: pygame.Surface
+    lightning_strike_frames: list[pygame.Surface]
 
     rocket_turret: pygame.Surface
     rocket_turret__reloading: pygame.Surface
@@ -39,12 +42,16 @@ def load_assets() -> Assets:
         elite=pygame.image.load("assets/enemies/elite.png"),
         commando=pygame.image.load("assets/enemies/commando.png"),
         tank=pygame.image.load("assets/enemies/tank.png"),
+        turret_build_zone=pygame.image.load("assets/turrets/buildzone.png"),
         bullet_turret=pygame.image.load("assets/turrets/mach1.png"),
         bullet_turret__firing=pygame.image.load("assets/turrets/mach1--firing.png"),
         flame_turret=pygame.image.load("assets/turrets/flame1.png"),
         flame_particle=pygame.image.load("assets/turrets/flame-particle.png"),
+        lightning_turret=pygame.image.load("assets/turrets/lightning1.png"),
+        lightning_strike_frames=load_sheet_frames(
+            "assets/turrets/lightning-strike-sheet.png", (128, 128)
+        ),
         frost_turret=pygame.image.load("assets/turrets/frost1.png"),
-        #        frost_missile=pygame.image.load("assets/turrets/frost-particle.png"),
         frost_missile_frames=load_sheet_frames(
             "assets/turrets/frost-missile-sheet.png", (64, 64)
         ),

@@ -50,6 +50,7 @@ from .entities import (
     track_score_event,
     turret_property_can_be_upgraded,
     upgrade_turret,
+    sell_turret,
 )
 from .enums import (
     DamagesEnemyOnCollisionBehavior,
@@ -342,6 +343,7 @@ class PlayerInputProcessor(esper.Processor):
                 PlayerActionKind.SelectTurret,
                 PlayerActionKind.UpgradeTurretProperty,
                 PlayerActionKind.SetTurretToBuild,
+                PlayerActionKind.SellTurret,
             },
             PlayerInputState.BuildingTurret: {
                 PlayerActionKind.ClearTurretToBuild,
@@ -396,6 +398,16 @@ class PlayerInputProcessor(esper.Processor):
 
                         changed_selected_turret = True
 
+                case {"kind": PlayerActionKind.SellTurret}:
+                    sell_turret(
+                        self.world, player_input_machine.selected_turret, assets=assets
+                    )
+
+                    player_input_machine.state = PlayerInputState.Idle
+                    player_input_machine.selected_turret = None
+
+                    changed_selected_turret = True
+
                 case {
                     "kind": PlayerActionKind.SetTurretToBuild,
                     "turret_kind": turret_kind,
@@ -448,26 +460,20 @@ class PlayerInputProcessor(esper.Processor):
 
         if changed_turret_to_build:
             # maybe add a border (or other visual effect) to the selected turret button
-            turret_gui_element_map = {
-                TurretKind.Bullet: gui_elements.basic_turret_build_button,
-                TurretKind.Flame: gui_elements.flame_turret_build_button,
-                TurretKind.Frost: gui_elements.frost_turret_build_button,
-                TurretKind.Rocket: gui_elements.rocket_turret_build_button,
-            }
 
             match player_input_machine.state:
                 case PlayerInputState.BuildingTurret:
                     # reset button classes
-                    for gui_button in turret_gui_element_map.values():
+                    for gui_button in gui_elements.turret_build_buttons.values():
                         gui_button.enable()
 
-                    if gui_button := turret_gui_element_map.get(
+                    if gui_button := gui_elements.turret_build_buttons.get(
                         player_input_machine.turret_to_build
                     ):
                         gui_button.disable()
                 case _:
                     # reset button classes
-                    for gui_button in turret_gui_element_map.values():
+                    for gui_button in gui_elements.turret_build_buttons.values():
                         gui_button.enable()
 
         if changed_selected_turret:

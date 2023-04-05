@@ -24,6 +24,7 @@ class PlayerActionKind(enum.IntEnum):
     ClearTurretToBuild = enum.auto()
 
     UpgradeTurretProperty = enum.auto()
+    SellTurret = enum.auto()
 
     ExitGame = enum.auto()
 
@@ -72,6 +73,15 @@ class TurretKind(enum.IntEnum):
     Flame = enum.auto()
     Rocket = enum.auto()
     Frost = enum.auto()
+    Lightning = enum.auto()
+
+
+enabled_turret_kinds = [
+    TurretKind.Bullet,
+    TurretKind.Flame,
+    TurretKind.Rocket,
+    TurretKind.Lightning,
+]
 
 
 class TurretUpgradeablePropertyKind(enum.IntEnum):

@@ -5,6 +5,7 @@ import pygame
 
 from pygame import Rect, Vector2
 
+
 from ..constants import MAX_TURRET_PROPERTY_UPGRADE_LEVEL, PLAYER_STARTING_MONEY
 
 from .assets import Assets
@@ -29,6 +30,7 @@ from .components import (
     TimeToLive,
     Frozen,
     FrostMissile,
+    TurretBuildZone,
 )
 from .enums import (
     DamagesEnemyEffectKind,
@@ -41,6 +43,7 @@ from .enums import (
     TurretState,
     TurretUpgradeablePropertyKind,
 )
+from .resources import add_resources_from_turret_sale
 
 from . import esper
 
@@ -349,6 +352,51 @@ def create_bullet_turret(
     )
 
 
+def create_lightning_turret(
+    world: esper.World, build_zone_ent: int, *, assets: Assets
+) -> int:
+    bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
+
+    image = assets.lightning_turret
+    image_rect = image.get_rect()
+
+    bbox = BoundingBox(rect=Rect(image_rect))
+    bbox.rect.center = bz_bbox.rect.center
+
+    upgrade_levels = {
+        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.RateOfFire: 1,
+        TurretUpgradeablePropertyKind.Range: 1,
+    }
+
+    base_stats = {
+        TurretUpgradeablePropertyKind.Damage: 25,
+        TurretUpgradeablePropertyKind.RateOfFire: 5_000.0,
+        TurretUpgradeablePropertyKind.Range: 300.0,
+    }
+
+    stat_changes_per_level = {
+        TurretUpgradeablePropertyKind.Damage: 5,
+        TurretUpgradeablePropertyKind.RateOfFire: -200.0,
+        TurretUpgradeablePropertyKind.Range: 50.0,
+    }
+
+    # for now, remove build zone entity, but may want to disable instead
+    world.delete_entity(build_zone_ent)
+
+    return world.create_entity(
+        TurretMachine(
+            state=TurretState.Idle,
+            kind=TurretKind.Lightning,
+            upgrade_levels=upgrade_levels,
+            base_stats=base_stats,
+            stat_changes_per_level=stat_changes_per_level,
+        ),
+        bbox,
+        Renderable(image=image, order=RenderableOrder.Objects),
+    )
+
+
 def fire_turret(
     world: esper.World,
     turret_ent: int,
@@ -369,6 +417,9 @@ def fire_turret(
 
         case TurretKind.Rocket:
             create_missile(world, turret_ent, enemy_ent, assets=assets)
+
+        case TurretKind.Lightning:
+            create_lightning_strike(world, turret_ent, enemy_ent, assets=assets)
 
 
 def create_missile(
@@ -432,6 +483,75 @@ def create_rocket_missile_explosion(
         TimeToLive(duration=250.0),
         DamagesEnemy(
             damage=missile.damage,
+            pierced_count=9999,
+            on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
+        ),
+    )
+
+
+def create_lightning_strike(
+    world: esper.World,
+    turret_ent: int,
+    enemy_ent: int,
+    *,
+    assets: Assets,
+):
+    turret_machine = world.component_for_entity(turret_ent, TurretMachine)
+    enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
+
+    animated = Animated(frames=assets.lightning_strike_frames, step=50.0)
+    base_image = animated.current_frame
+    image_rect = base_image.get_rect()
+
+    # explosion should spawn at missile center
+    explosion_rect = Rect((0, 0), image_rect.size)
+    explosion_rect.center = enemy_bbox.rect.center
+
+    world.create_entity(
+        animated,
+        BoundingBox(rect=explosion_rect),
+        Renderable(image=base_image, order=RenderableOrder.Objects),
+        TimeToLive(duration=800.0),  # sync'd with animation
+        DamagesEnemy(
+            damage=turret_machine.damage,
+            pierced_count=9999,
+            on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
+            effects=[
+                DamagesEnemyEffect(
+                    kind=DamagesEnemyEffectKind.DynamicCreator,
+                    dynamic_effect_creator=create_lightning_strike_chain_lightning,
+                ),
+            ],
+        ),
+    )
+
+
+def create_lightning_strike_chain_lightning(
+    world: esper.World,
+    source_ent: int,
+    enemy_ent: int,
+    *,
+    assets: Assets,
+):
+    # TODO
+    frost = world.component_for_entity(source_ent, FrostMissile)
+    frost_bbox = world.component_for_entity(source_ent, BoundingBox)
+
+    animated = Animated(frames=assets.frost_missile_explosion_frames, step=50.0)
+    base_image = animated.current_frame
+    image_rect = base_image.get_rect()
+
+    # explosion should spawn at frost center
+    explosion_rect = Rect((0, 0), image_rect.size)
+    explosion_rect.center = frost_bbox.rect.center
+
+    world.create_entity(
+        animated,
+        BoundingBox(rect=explosion_rect),
+        Renderable(image=base_image, order=RenderableOrder.Objects),
+        TimeToLive(duration=800.0),  # synced with animation
+        DamagesEnemy(
+            damage=frost.damage,
             pierced_count=9999,
             on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
         ),
@@ -698,3 +818,28 @@ def sync_selected_turret_range_extra_renderable(
     range_extra_renderable.image = range_image
     range_extra_renderable.order = RenderableExtraOrder.Over
     range_extra_renderable.rect = range_rect
+
+
+def sell_turret(world: esper.World, turret_ent: int, *, assets: Assets):
+    # create turret build zone in its place
+    bbox = world.component_for_entity(turret_ent, BoundingBox)
+
+    image = assets.turret_build_zone
+    image_rect = image.get_rect()
+
+    image_rect.center = bbox.rect.center
+
+    world.create_entity(
+        Renderable(
+            image=image,
+            order=RenderableOrder.Objects,
+        ),
+        BoundingBox(rect=image_rect),
+        TurretBuildZone(),
+    )
+
+    # increase money
+    add_resources_from_turret_sale(world, turret_ent)
+
+    # delete turret
+    world.delete_entity(turret_ent)

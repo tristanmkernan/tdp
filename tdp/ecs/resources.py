@@ -8,6 +8,7 @@ TURRET_BUILD_COSTS: dict[TurretKind, int] = {
     TurretKind.Flame: 100,
     TurretKind.Frost: 100,
     TurretKind.Rocket: 100,
+    TurretKind.Lightning: 100,
 }
 
 TURRET_NAMES: dict[TurretKind, str] = {
@@ -15,6 +16,13 @@ TURRET_NAMES: dict[TurretKind, str] = {
     TurretKind.Flame: "Flame",
     TurretKind.Frost: "Frost",
     TurretKind.Rocket: "Rocket",
+    TurretKind.Lightning: "Lightning",
+}
+
+TURRET_UPGRADE_NAMES: dict[TurretUpgradeablePropertyKind, str] = {
+    TurretUpgradeablePropertyKind.Damage: "Damage",
+    TurretUpgradeablePropertyKind.Range: "Range",
+    TurretUpgradeablePropertyKind.RateOfFire: "Freq",
 }
 
 TURRET_UPGRADE_COSTS: dict[TurretUpgradeablePropertyKind, int] = {
@@ -22,6 +30,8 @@ TURRET_UPGRADE_COSTS: dict[TurretUpgradeablePropertyKind, int] = {
     TurretUpgradeablePropertyKind.Range: 25,
     TurretUpgradeablePropertyKind.RateOfFire: 25,
 }
+
+TURRET_SELL_REWARD = 25
 
 
 def player_has_resources_to_build_turret(
@@ -54,3 +64,9 @@ def subtract_resources_to_upgrade_turret(
     player_resources = world.get_component(PlayerResources)[0][1]
 
     player_resources.money -= TURRET_UPGRADE_COSTS[turret_property]
+
+
+def add_resources_from_turret_sale(world: esper.World, turret_ent: int):
+    player_resources = world.get_component(PlayerResources)[0][1]
+
+    player_resources.money += TURRET_SELL_REWARD
