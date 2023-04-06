@@ -27,6 +27,7 @@ class Assets:
 
     lightning_turret: pygame.Surface
     lightning_strike_frames: list[pygame.Surface]
+    lightning_strike_chain_lightning_frames: list[pygame.Surface]
 
     rocket_turret: pygame.Surface
     rocket_turret__reloading: pygame.Surface
@@ -50,6 +51,9 @@ def load_assets() -> Assets:
         lightning_turret=pygame.image.load("assets/turrets/lightning1.png"),
         lightning_strike_frames=load_sheet_frames(
             "assets/turrets/lightning-strike-sheet.png", (128, 128)
+        ),
+        lightning_strike_chain_lightning_frames=load_sheet_frames(
+            "assets/turrets/lightning-strike-chain-lightning-sheet.png", (64, 64)
         ),
         frost_turret=pygame.image.load("assets/turrets/frost1.png"),
         frost_missile_frames=load_sheet_frames(

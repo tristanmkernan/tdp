@@ -64,8 +64,14 @@ def get_player_action_for_button_press(
 
 
 def get_closest_enemy(
-    world: esper.World, turret_bbox: BoundingBox, *, range: float
+    world: esper.World,
+    src_bbox: BoundingBox,
+    *,
+    range: float,
+    exclude: list[int] = None,
 ) -> int | None:
+    exclude = exclude or []
+
     ## find closest enemy
     closest_enemy = None
     closest_enemy_distance = float("inf")
@@ -74,8 +80,11 @@ def get_closest_enemy(
         _enemy,
         other_bbox,
     ) in world.get_components(Enemy, BoundingBox):
+        if enemy_ent in exclude:
+            continue
+
         distance_to_enemy = Vector2(other_bbox.rect.center).distance_to(
-            Vector2(turret_bbox.rect.center)
+            Vector2(src_bbox.rect.center)
         )
 
         if distance_to_enemy <= range and distance_to_enemy < closest_enemy_distance:

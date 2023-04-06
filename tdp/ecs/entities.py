@@ -1,9 +1,12 @@
+from functools import partial
 import logging
 import random
 
 import pygame
 
 from pygame import Rect, Vector2
+
+from tdp.ecs.util import get_closest_enemy
 
 
 from ..constants import MAX_TURRET_PROPERTY_UPGRADE_LEVEL, PLAYER_STARTING_MONEY
@@ -388,6 +391,7 @@ def create_lightning_turret(
         TurretMachine(
             state=TurretState.Idle,
             kind=TurretKind.Lightning,
+            rotates=False,
             upgrade_levels=upgrade_levels,
             base_stats=base_stats,
             stat_changes_per_level=stat_changes_per_level,
@@ -499,7 +503,7 @@ def create_lightning_strike(
     turret_machine = world.component_for_entity(turret_ent, TurretMachine)
     enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
 
-    animated = Animated(frames=assets.lightning_strike_frames, step=50.0)
+    animated = Animated(frames=assets.lightning_strike_frames, step=2 * 50.0)
     base_image = animated.current_frame
     image_rect = base_image.get_rect()
 
@@ -511,7 +515,7 @@ def create_lightning_strike(
         animated,
         BoundingBox(rect=explosion_rect),
         Renderable(image=base_image, order=RenderableOrder.Objects),
-        TimeToLive(duration=800.0),  # sync'd with animation
+        TimeToLive(duration=2 * 800.0),  # sync'd with animation
         DamagesEnemy(
             damage=turret_machine.damage,
             pierced_count=9999,
@@ -519,7 +523,12 @@ def create_lightning_strike(
             effects=[
                 DamagesEnemyEffect(
                     kind=DamagesEnemyEffectKind.DynamicCreator,
-                    dynamic_effect_creator=create_lightning_strike_chain_lightning,
+                    dynamic_effect_creator=partial(
+                        create_lightning_strike_chain_lightning,
+                        range=250.0,
+                        damage=int(turret_machine.damage / 2),
+                        enemies_hit=[enemy_ent],
+                    ),
                 ),
             ],
         ),
@@ -532,28 +541,56 @@ def create_lightning_strike_chain_lightning(
     enemy_ent: int,
     *,
     assets: Assets,
+    damage: int,
+    range: float,
+    enemies_hit: list[int],
 ):
-    # TODO
-    frost = world.component_for_entity(source_ent, FrostMissile)
-    frost_bbox = world.component_for_entity(source_ent, BoundingBox)
+    """
+    Find nearest enemy and jump
+    """
+    logger.debug("Lightning strike chain lightning")
 
-    animated = Animated(frames=assets.frost_missile_explosion_frames, step=50.0)
+    enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
+
+    closest_enemy_ent = get_closest_enemy(
+        world, enemy_bbox, range=range, exclude=enemies_hit
+    )
+
+    if closest_enemy_ent is None:
+        return
+
+    closest_enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
+
+    animated = Animated(
+        frames=assets.lightning_strike_chain_lightning_frames, step=2 * 50.0
+    )
     base_image = animated.current_frame
     image_rect = base_image.get_rect()
 
-    # explosion should spawn at frost center
+    # explosion should spawn at enemy center
     explosion_rect = Rect((0, 0), image_rect.size)
-    explosion_rect.center = frost_bbox.rect.center
+    explosion_rect.center = closest_enemy_bbox.rect.center
 
     world.create_entity(
         animated,
         BoundingBox(rect=explosion_rect),
         Renderable(image=base_image, order=RenderableOrder.Objects),
-        TimeToLive(duration=800.0),  # synced with animation
+        TimeToLive(duration=2 * 800.0),  # synced with animation
         DamagesEnemy(
-            damage=frost.damage,
+            damage=damage,
             pierced_count=9999,
             on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
+            effects=[
+                DamagesEnemyEffect(
+                    kind=DamagesEnemyEffectKind.DynamicCreator,
+                    dynamic_effect_creator=partial(
+                        create_lightning_strike_chain_lightning,
+                        damage=damage,
+                        range=range,
+                        enemies_hit=[*enemies_hit, enemy_ent],
+                    ),
+                ),
+            ],
         ),
     )
 

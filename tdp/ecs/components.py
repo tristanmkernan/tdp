@@ -255,6 +255,8 @@ class TurretMachine:
     base_stats: dict[TurretUpgradeablePropertyKind, int | float]
     stat_changes_per_level: dict[TurretUpgradeablePropertyKind, int | float]
 
+    rotates: bool = True
+
     elapsed: float = 0.0
 
     firing_animation_duration: float = 0.0

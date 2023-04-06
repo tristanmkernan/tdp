@@ -37,6 +37,7 @@ from .components import (
 from .entities import (
     apply_damage_effects_to_enemy,
     create_frost_turret,
+    create_lightning_turret,
     fire_turret,
     create_flame_turret,
     create_bullet_turret,
@@ -284,14 +285,15 @@ class DamagesEnemyProcessor(esper.Processor):
 
                     enemy.take_damage(damages_enemy.damage)
 
+                    if damages_enemy.applies_effects:
+                        apply_damage_effects_to_enemy(
+                            self.world, damaging_ent, enemy_ent, assets=assets
+                        )
+
                     if enemy.is_dead:
                         track_score_event(self.world, ScoreEventKind.EnemyKill)
 
                         kill_enemy(self.world, enemy_ent)
-                    elif damages_enemy.applies_effects:
-                        apply_damage_effects_to_enemy(
-                            self.world, damaging_ent, enemy_ent, assets=assets
-                        )
 
                     damages_enemy.pierced_count += 1
 
@@ -444,6 +446,10 @@ class PlayerInputProcessor(esper.Processor):
                             )
                         case TurretKind.Frost:
                             new_turret_ent = create_frost_turret(
+                                self.world, ent, assets=assets
+                            )
+                        case TurretKind.Lightning:
+                            new_turret_ent = create_lightning_turret(
                                 self.world, ent, assets=assets
                             )
 
@@ -609,7 +615,7 @@ class TurretStateProcessor(esper.Processor):
                     # if enemy, transition to tracking
                     if closest_enemy:
                         turret_machine.state = TurretState.Tracking
-                    else:
+                    elif turret_machine.rotates:
                         # slowly rotate
                         turret_bbox.rotation = turret_bbox.rotation.rotate(
                             turret_machine.idle_rotation_speed * delta
@@ -633,9 +639,10 @@ class TurretStateProcessor(esper.Processor):
                             closest_enemy, BoundingBox
                         )
 
-                        turret_bbox.rotation = Vector2(
-                            enemy_bbox.rect.center
-                        ) - Vector2(turret_bbox.rect.center)
+                        if turret_machine.rotates:
+                            turret_bbox.rotation = Vector2(
+                                enemy_bbox.rect.center
+                            ) - Vector2(turret_bbox.rect.center)
 
                         fire_turret(
                             self.world,
@@ -660,9 +667,10 @@ class TurretStateProcessor(esper.Processor):
                             closest_enemy, BoundingBox
                         )
 
-                        turret_bbox.rotation = Vector2(
-                            enemy_bbox.rect.center
-                        ) - Vector2(turret_bbox.rect.center)
+                        if turret_machine.rotates:
+                            turret_bbox.rotation = Vector2(
+                                enemy_bbox.rect.center
+                            ) - Vector2(turret_bbox.rect.center)
 
                         # if possible, transition to firing
                         if turret_machine.can_fire:
