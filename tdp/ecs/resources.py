@@ -5,12 +5,12 @@ from . import esper
 
 TURRET_BUILD_COSTS: dict[TurretKind, int] = {
     TurretKind.Bullet: 50,
-    TurretKind.Flame: 100,
+    TurretKind.Flame: 250,
     TurretKind.Frost: 100,
-    TurretKind.Rocket: 100,
-    TurretKind.Lightning: 100,
-    TurretKind.Poison: 100,
-    TurretKind.Tornado: 100,
+    TurretKind.Rocket: 500,
+    TurretKind.Lightning: 1000,
+    TurretKind.Poison: 1000,
+    TurretKind.Tornado: 1000,
 }
 
 TURRET_NAMES: dict[TurretKind, str] = {

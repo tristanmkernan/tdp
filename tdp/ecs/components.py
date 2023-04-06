@@ -425,6 +425,21 @@ class Frozen:
 
 
 @dataclasses.dataclass
+class Shocked:
+    duration: float
+
+    elapsed: float = 0.0
+
+    @property
+    def expired(self):
+        return self.elapsed >= self.duration
+
+    def reapply(self, other: "Frozen"):
+        # dont want to interrupt damage ticks, want to extend duration
+        self.duration = self.elapsed + other.duration
+
+
+@dataclasses.dataclass
 class Animated:
     frames: list[Surface]
     step: float

@@ -56,7 +56,7 @@ def load_assets() -> Assets:
             "assets/turrets/lightning-strike-sheet.png", (128, 128)
         ),
         lightning_strike_chain_lightning_frames=load_sheet_frames(
-            "assets/turrets/lightning-strike-chain-lightning-sheet.png", (64, 64)
+            "assets/turrets/lightning-strike-chain-lightning-sheet.png", (32, 32)
         ),
         poison_turret=pygame.image.load("assets/turrets/poison1.png"),
         poison_strike_frames=load_sheet_frames(

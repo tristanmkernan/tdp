@@ -119,6 +119,7 @@ class DamagesEnemyOnCollisionBehavior(enum.IntEnum):
     DeleteEntity = enum.auto()
     RemoveComponent = enum.auto()
     DoNothing = enum.auto()
+    Pierce = enum.auto()
 
 
 class DamagesEnemyEffectKind(enum.IntEnum):

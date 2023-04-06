@@ -6,7 +6,7 @@ import pygame
 
 from pygame import Rect, Vector2
 
-from tdp.ecs.util import get_closest_enemy
+from tdp.ecs.util import get_closest_enemy, get_enemies_in_range
 
 
 from ..constants import MAX_TURRET_PROPERTY_UPGRADE_LEVEL, PLAYER_STARTING_MONEY
@@ -25,6 +25,7 @@ from .components import (
     PlayerInputMachine,
     PlayerResources,
     ScoreTracker,
+    Shocked,
     TurretMachine,
     UnitPathing,
     Velocity,
@@ -375,13 +376,13 @@ def create_lightning_turret(
     }
 
     base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 25,
+        TurretUpgradeablePropertyKind.Damage: 5,
         TurretUpgradeablePropertyKind.RateOfFire: 5_000.0,
         TurretUpgradeablePropertyKind.Range: 300.0,
     }
 
     stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 5,
+        TurretUpgradeablePropertyKind.Damage: 3,
         TurretUpgradeablePropertyKind.RateOfFire: -200.0,
         TurretUpgradeablePropertyKind.Range: 50.0,
     }
@@ -587,7 +588,6 @@ def create_rocket_missile_explosion(
         TimeToLive(duration=250.0),
         DamagesEnemy(
             damage=missile.damage,
-            pierces=9999,
             on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
         ),
     )
@@ -618,16 +618,18 @@ def create_lightning_strike(
         TimeToLive(duration=2 * 800.0),  # sync'd with animation
         DamagesEnemy(
             damage=turret_machine.damage,
-            pierces=9999,
             on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
             effects=[
+                DamagesEnemyEffect(
+                    kind=DamagesEnemyEffectKind.AddsComponent,
+                    component=Shocked(duration=500.0),
+                ),
                 DamagesEnemyEffect(
                     kind=DamagesEnemyEffectKind.DynamicCreator,
                     dynamic_effect_creator=partial(
                         create_lightning_strike_chain_lightning,
                         range=250.0,
                         damage=int(turret_machine.damage / 2),
-                        enemies_hit=[enemy_ent],
                     ),
                 ),
             ],
@@ -661,6 +663,7 @@ def create_poison_explosion(
         DamagesEnemy(
             damage=0,
             pierces=9999,
+            on_collision_behavior=DamagesEnemyOnCollisionBehavior.Pierce,
             effects=[
                 DamagesEnemyEffect(
                     kind=DamagesEnemyEffectKind.AddsComponent,
@@ -707,6 +710,7 @@ def create_tornado(
         TimeToLive(duration=8 * 500.0),  # sync'd with animation
         DamagesEnemy(
             damage=0,
+            on_collision_behavior=DamagesEnemyOnCollisionBehavior.Pierce,
             pierces=9999,
             effects=[
                 DamagesEnemyEffect(
@@ -733,56 +737,59 @@ def create_lightning_strike_chain_lightning(
     assets: Assets,
     damage: int,
     range: float,
-    enemies_hit: list[int],
 ):
     """
-    Find nearest enemy and jump
+    Jump to nearby enemies without shock status
+
+    TODO would be cool to have a delay on the jump
     """
-    logger.debug("Lightning strike chain lightning")
+    logger.debug("Lightning strike chain lightning jump")
 
     enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
 
-    closest_enemy_ent = get_closest_enemy(
-        world, enemy_bbox, range=range, exclude=enemies_hit
-    )
+    enemies_in_range = get_enemies_in_range(world, enemy_bbox, range=range)
 
-    if closest_enemy_ent is None:
-        return
+    shocked_enemies = {x[0] for x in world.get_component(Shocked)}
 
-    closest_enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
+    enemies_in_range = [ent for ent in enemies_in_range if ent not in shocked_enemies]
 
-    animated = Animated(
-        frames=assets.lightning_strike_chain_lightning_frames, step=2 * 50.0
-    )
-    base_image = animated.current_frame
-    image_rect = base_image.get_rect()
+    for nearby_enemy_ent in enemies_in_range:
+        nearby_enemy_bbox = world.component_for_entity(nearby_enemy_ent, BoundingBox)
 
-    # explosion should spawn at enemy center
-    explosion_rect = Rect((0, 0), image_rect.size)
-    explosion_rect.center = closest_enemy_bbox.rect.center
+        animated = Animated(
+            frames=assets.lightning_strike_chain_lightning_frames, step=2 * 50.0
+        )
+        base_image = animated.current_frame
+        image_rect = base_image.get_rect()
 
-    world.create_entity(
-        animated,
-        BoundingBox(rect=explosion_rect),
-        Renderable(image=base_image, order=RenderableOrder.Objects),
-        TimeToLive(duration=2 * 800.0),  # synced with animation
-        DamagesEnemy(
-            damage=damage,
-            pierces=9999,
-            on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
-            effects=[
-                DamagesEnemyEffect(
-                    kind=DamagesEnemyEffectKind.DynamicCreator,
-                    dynamic_effect_creator=partial(
-                        create_lightning_strike_chain_lightning,
-                        damage=damage,
-                        range=range,
-                        enemies_hit=[*enemies_hit, enemy_ent],
+        # explosion should spawn at enemy center
+        explosion_rect = Rect((0, 0), image_rect.size)
+        explosion_rect.center = nearby_enemy_bbox.rect.center
+
+        world.create_entity(
+            animated,
+            BoundingBox(rect=explosion_rect),
+            Renderable(image=base_image, order=RenderableOrder.Objects),
+            TimeToLive(duration=2 * 800.0),  # synced with animation
+            DamagesEnemy(
+                damage=damage,
+                on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
+                effects=[
+                    DamagesEnemyEffect(
+                        kind=DamagesEnemyEffectKind.AddsComponent,
+                        component=Shocked(duration=500.0),
                     ),
-                ),
-            ],
-        ),
-    )
+                    DamagesEnemyEffect(
+                        kind=DamagesEnemyEffectKind.DynamicCreator,
+                        dynamic_effect_creator=partial(
+                            create_lightning_strike_chain_lightning,
+                            damage=damage,
+                            range=range,
+                        ),
+                    ),
+                ],
+            ),
+        )
 
 
 def create_flame(
@@ -826,6 +833,7 @@ def create_flame(
         TimeToLive(duration=duration),
         DamagesEnemy(
             damage=0,
+            on_collision_behavior=DamagesEnemyOnCollisionBehavior.Pierce,
             pierces=9999,
             effects=[
                 DamagesEnemyEffect(
@@ -922,7 +930,6 @@ def create_frost_missile_explosion(
         TimeToLive(duration=800.0),  # synced with animation
         DamagesEnemy(
             damage=frost.damage,
-            pierces=9999,
             on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
         ),
     )

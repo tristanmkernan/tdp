@@ -92,3 +92,31 @@ def get_closest_enemy(
             closest_enemy = enemy_ent
 
     return closest_enemy
+
+
+def get_enemies_in_range(
+    world: esper.World,
+    src_bbox: BoundingBox,
+    *,
+    range: float,
+    exclude: list[int] = None,
+) -> list[int]:
+    exclude = exclude or []
+
+    ents_in_range = []
+
+    for enemy_ent, (
+        _enemy,
+        other_bbox,
+    ) in world.get_components(Enemy, BoundingBox):
+        if enemy_ent in exclude:
+            continue
+
+        distance_to_enemy = Vector2(other_bbox.rect.center).distance_to(
+            Vector2(src_bbox.rect.center)
+        )
+
+        if distance_to_enemy <= range:
+            ents_in_range.append(enemy_ent)
+
+    return ents_in_range

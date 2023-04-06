@@ -25,6 +25,7 @@ from .components import (
     PlayerResources,
     Poisoned,
     RemoveOnOutOfBounds,
+    Shocked,
     TimeToLive,
     TurretMachine,
     Velocity,
@@ -94,6 +95,7 @@ def add_systems(world: esper.World):
     world.add_processor(TurretStateProcessor())
     world.add_processor(BuffetedProcessor())
     world.add_processor(BurningProcessor())
+    world.add_processor(ShockedProcessor())
     world.add_processor(PoisonedProcessor())
     world.add_processor(EnemyStatusVisualEffectProcessor())
     world.add_processor(TimeToLiveProcessor())
@@ -285,6 +287,8 @@ class DamagesEnemyProcessor(esper.Processor):
         for damaging_ent, (damages_enemy, damaging_bbox) in self.world.get_components(
             DamagesEnemy, BoundingBox
         ):
+            collided = False
+
             for enemy_ent, (
                 enemy,
                 enemy_bbox,
@@ -292,28 +296,36 @@ class DamagesEnemyProcessor(esper.Processor):
                 if damaging_bbox.rect.colliderect(enemy_bbox.rect):
                     logger.debug("Damaging entity id=%d", enemy_ent)
 
-                    enemy.take_damage(damages_enemy.damage)
+                    collided = True
 
-                    if damages_enemy.applies_effects:
-                        apply_damage_effects_to_enemy(
-                            self.world, damaging_ent, enemy_ent, assets=assets
-                        )
+                    enemy.take_damage(damages_enemy.damage)
 
                     if enemy.is_dead:
                         track_score_event(self.world, ScoreEventKind.EnemyKill)
 
                         kill_enemy(self.world, enemy_ent)
+                    elif damages_enemy.applies_effects:
+                        apply_damage_effects_to_enemy(
+                            self.world, damaging_ent, enemy_ent, assets=assets
+                        )
 
-                    damages_enemy.pierced_count += 1
+                    if (
+                        damages_enemy.on_collision_behavior
+                        == DamagesEnemyOnCollisionBehavior.Pierce
+                    ):
+                        damages_enemy.pierced_count += 1
 
-                    if damages_enemy.expired:
-                        match damages_enemy.on_collision_behavior:
-                            case DamagesEnemyOnCollisionBehavior.DeleteEntity:
-                                self.world.delete_entity(damaging_ent)
-                            case DamagesEnemyOnCollisionBehavior.RemoveComponent:
-                                self.world.remove_component(damaging_ent, DamagesEnemy)
+                        if damages_enemy.expired:
+                            self.world.delete_entity(damaging_ent)
 
-                        break
+                            break
+
+            if collided:
+                match damages_enemy.on_collision_behavior:
+                    case DamagesEnemyOnCollisionBehavior.DeleteEntity:
+                        self.world.delete_entity(damaging_ent)
+                    case DamagesEnemyOnCollisionBehavior.RemoveComponent:
+                        self.world.remove_component(damaging_ent, DamagesEnemy)
 
 
 class PlayerInputProcessor(esper.Processor):
@@ -772,6 +784,15 @@ class PoisonedProcessor(esper.Processor):
 
             if poisoned.expired:
                 self.world.remove_component(enemy_ent, Poisoned)
+
+
+class ShockedProcessor(esper.Processor):
+    def process(self, *args, delta: float, **kwargs):
+        for enemy_ent, (enemy, shocked) in self.world.get_components(Enemy, Shocked):
+            shocked.elapsed += delta
+
+            if shocked.expired:
+                self.world.remove_component(enemy_ent, Shocked)
 
 
 class BuffetedProcessor(esper.Processor):
