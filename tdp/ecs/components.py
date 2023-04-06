@@ -18,6 +18,7 @@ from .enums import (
     TurretUpgradeablePropertyKind,
     VelocityAdjustmentKind,
     DamagesEnemyEffectKind,
+    VelocityAdjustmentSource,
 )
 from .types import SpawningWaveStep
 
@@ -103,9 +104,10 @@ class VelocityAdjustment:
     kind: VelocityAdjustmentKind
 
     duration: float
+
     elapsed: float = 0.0
 
-    magnitude: float = 0.0
+    factor: float = 0.0
 
     # TODO this should be a mixin, often repeated
     @property
@@ -116,7 +118,7 @@ class VelocityAdjustment:
 @dataclasses.dataclass
 class Velocity:
     vec: Vector2 = dataclasses.field(default_factory=Vector2)
-    adjustments: dict[VelocityAdjustmentKind, VelocityAdjustment] = dataclasses.field(
+    adjustments: dict[VelocityAdjustmentSource, VelocityAdjustment] = dataclasses.field(
         default_factory=dict
     )
 
@@ -363,6 +365,29 @@ class Burning:
 
 @dataclasses.dataclass
 class Poisoned:
+    damage: int
+    damage_tick_rate: float
+
+    duration: float
+
+    ticks: int = 0
+    elapsed: float = 0.0
+
+    @property
+    def tick_due(self):
+        return self.elapsed >= (self.ticks + 1) * self.damage_tick_rate
+
+    @property
+    def expired(self):
+        return self.elapsed >= self.duration
+
+    def reapply(self, other: "Burning"):
+        # dont want to interrupt damage ticks, want to extend duration
+        self.duration = self.elapsed + other.duration
+
+
+@dataclasses.dataclass
+class Buffeted:
     damage: int
     damage_tick_rate: float
 

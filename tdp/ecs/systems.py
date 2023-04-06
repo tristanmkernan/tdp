@@ -16,6 +16,7 @@ from .types import PlayerAction
 from .components import (
     Animated,
     BoundingBox,
+    Buffeted,
     Burning,
     DamagesEnemy,
     Enemy,
@@ -44,6 +45,7 @@ from .entities import (
     create_bullet_turret,
     create_rocket_turret,
     create_poison_turret,
+    create_tornado_turret,
     kill_enemy,
     spawn_commando,
     spawn_elite,
@@ -68,6 +70,7 @@ from .enums import (
     TurretKind,
     TurretState,
     VelocityAdjustmentKind,
+    VelocityAdjustmentSource,
 )
 from .rendering import render_composite, render_simple
 from .resources import (
@@ -89,6 +92,7 @@ logger = logging.getLogger(__name__)
 def add_systems(world: esper.World):
     world.add_processor(PlayerResourcesProcessor())
     world.add_processor(TurretStateProcessor())
+    world.add_processor(BuffetedProcessor())
     world.add_processor(BurningProcessor())
     world.add_processor(PoisonedProcessor())
     world.add_processor(EnemyStatusVisualEffectProcessor())
@@ -142,9 +146,11 @@ class MovementProcessor(esper.Processor):
                     case VelocityAdjustment(kind=VelocityAdjustmentKind.Immobile):
                         velocity_vector.scale_to_length(0.0)
                     case VelocityAdjustment(
-                        kind=VelocityAdjustmentKind.Slowdown, magnitude=magnitude
+                        kind=VelocityAdjustmentKind.Slowdown, factor=factor
                     ):
-                        velocity_vector.scale_to_length(magnitude)
+                        velocity_vector.scale_to_length(
+                            velocity_vector.magnitude() * factor
+                        )
 
             # update position
             bbox.rect.centerx += velocity_vector.x * delta
@@ -459,6 +465,10 @@ class PlayerInputProcessor(esper.Processor):
                             new_turret_ent = create_poison_turret(
                                 self.world, ent, assets=assets
                             )
+                        case TurretKind.Tornado:
+                            new_turret_ent = create_tornado_turret(
+                                self.world, ent, assets=assets
+                            )
 
                     subtract_resources_to_build_turret(
                         self.world, player_input_machine.turret_to_build
@@ -762,6 +772,33 @@ class PoisonedProcessor(esper.Processor):
 
             if poisoned.expired:
                 self.world.remove_component(enemy_ent, Poisoned)
+
+
+class BuffetedProcessor(esper.Processor):
+    def process(self, *args, delta: float, **kwargs):
+        for enemy_ent, (enemy, buffeted, vel) in self.world.get_components(
+            Enemy, Buffeted, Velocity
+        ):
+            # reset velocity adjustment
+            vel.adjustments[VelocityAdjustmentSource.Buffeted] = VelocityAdjustment(
+                VelocityAdjustmentKind.Slowdown, duration=500.0, factor=0.5
+            )
+
+            buffeted.elapsed += delta
+
+            if buffeted.tick_due:
+                # TODO DRY take damage / delete entity
+                enemy.take_damage(buffeted.damage)
+
+                if enemy.is_dead:
+                    track_score_event(self.world, ScoreEventKind.EnemyKill)
+
+                    kill_enemy(self.world, enemy_ent)
+
+                buffeted.ticks += 1
+
+            if buffeted.expired:
+                self.world.remove_component(enemy_ent, Buffeted)
 
 
 class EnemyStatusVisualEffectProcessor(esper.Processor):

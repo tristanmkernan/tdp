@@ -75,6 +75,7 @@ class TurretKind(enum.IntEnum):
     Frost = enum.auto()
     Lightning = enum.auto()
     Poison = enum.auto()
+    Tornado = enum.auto()
 
 
 enabled_turret_kinds = [
@@ -83,6 +84,7 @@ enabled_turret_kinds = [
     TurretKind.Rocket,
     TurretKind.Lightning,
     TurretKind.Poison,
+    TurretKind.Tornado,
 ]
 
 
@@ -102,6 +104,10 @@ class PlayerInputState(enum.IntEnum):
 class SpawningWaveStepKind(enum.IntEnum):
     SpawnEnemy = enum.auto()
     Wait = enum.auto()
+
+
+class VelocityAdjustmentSource(enum.IntEnum):
+    Buffeted = enum.auto()
 
 
 class VelocityAdjustmentKind(enum.IntEnum):

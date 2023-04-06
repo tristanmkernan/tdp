@@ -33,6 +33,9 @@ class Assets:
     rocket_missile: pygame.Surface
     rocket_missile_explosion: pygame.Surface
 
+    tornado_turret: pygame.Surface
+    tornado_strike_frames: list[pygame.Surface]
+
     burning_status_effect: pygame.Surface
     poisoned_status_effect: pygame.Surface
 
@@ -67,6 +70,10 @@ def load_assets() -> Assets:
         rocket_missile_explosion=pygame.image.load(
             "assets/turrets/rocket-missile-explosion.png"
         ),
+        tornado_turret=pygame.image.load("assets/turrets/tornado1.png"),
+        tornado_strike_frames=load_sheet_frames(
+            "assets/turrets/wind-strike-sheet.png", (128, 128)
+        )[3:13],
         burning_status_effect=pygame.image.load("assets/enemies/status/burning.png"),
         poisoned_status_effect=pygame.image.load("assets/enemies/status/poisoned.png"),
     )
