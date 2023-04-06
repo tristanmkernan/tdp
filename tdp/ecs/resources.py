@@ -9,6 +9,7 @@ TURRET_BUILD_COSTS: dict[TurretKind, int] = {
     TurretKind.Frost: 100,
     TurretKind.Rocket: 100,
     TurretKind.Lightning: 100,
+    TurretKind.Poison: 100,
 }
 
 TURRET_NAMES: dict[TurretKind, str] = {
@@ -17,6 +18,7 @@ TURRET_NAMES: dict[TurretKind, str] = {
     TurretKind.Frost: "Frost",
     TurretKind.Rocket: "Rocket",
     TurretKind.Lightning: "Lightning",
+    TurretKind.Poison: "Poison",
 }
 
 TURRET_UPGRADE_NAMES: dict[TurretUpgradeablePropertyKind, str] = {

@@ -15,3 +15,8 @@ Kenney.nl
 
 [open game art profile](https://opengameart.org/users/daneeklu)
 [art pack](https://opengameart.org/content/extended-lpc-magic-pack) (CC BY-SA 3.0)
+
+## Buch
+
+[open game art profile](https://opengameart.org/users/buch)
+[art pack](https://opengameart.org/content/rpg-status-icons-16x16-and-8x8) (CC BY 3.0)

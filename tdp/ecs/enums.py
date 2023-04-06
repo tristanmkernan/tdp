@@ -74,6 +74,7 @@ class TurretKind(enum.IntEnum):
     Rocket = enum.auto()
     Frost = enum.auto()
     Lightning = enum.auto()
+    Poison = enum.auto()
 
 
 enabled_turret_kinds = [
@@ -81,6 +82,7 @@ enabled_turret_kinds = [
     TurretKind.Flame,
     TurretKind.Rocket,
     TurretKind.Lightning,
+    TurretKind.Poison,
 ]
 
 
@@ -110,6 +112,7 @@ class VelocityAdjustmentKind(enum.IntEnum):
 class DamagesEnemyOnCollisionBehavior(enum.IntEnum):
     DeleteEntity = enum.auto()
     RemoveComponent = enum.auto()
+    DoNothing = enum.auto()
 
 
 class DamagesEnemyEffectKind(enum.IntEnum):

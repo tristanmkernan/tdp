@@ -21,13 +21,12 @@ class Assets:
     flame_turret: pygame.Surface
     flame_particle: pygame.Surface
 
-    frost_turret: pygame.Surface
-    frost_missile_frames: list[pygame.Surface]
-    frost_missile_explosion_frames: list[pygame.Surface]
-
     lightning_turret: pygame.Surface
     lightning_strike_frames: list[pygame.Surface]
     lightning_strike_chain_lightning_frames: list[pygame.Surface]
+
+    poison_turret: pygame.Surface
+    poison_strike_frames: list[pygame.Surface]
 
     rocket_turret: pygame.Surface
     rocket_turret__reloading: pygame.Surface
@@ -35,6 +34,7 @@ class Assets:
     rocket_missile_explosion: pygame.Surface
 
     burning_status_effect: pygame.Surface
+    poisoned_status_effect: pygame.Surface
 
 
 def load_assets() -> Assets:
@@ -55,12 +55,9 @@ def load_assets() -> Assets:
         lightning_strike_chain_lightning_frames=load_sheet_frames(
             "assets/turrets/lightning-strike-chain-lightning-sheet.png", (64, 64)
         ),
-        frost_turret=pygame.image.load("assets/turrets/frost1.png"),
-        frost_missile_frames=load_sheet_frames(
-            "assets/turrets/frost-missile-sheet.png", (64, 64)
-        ),
-        frost_missile_explosion_frames=load_sheet_frames(
-            "assets/turrets/frost-missile-explosion-sheet.png", (128, 128)
+        poison_turret=pygame.image.load("assets/turrets/poison1.png"),
+        poison_strike_frames=load_sheet_frames(
+            "assets/turrets/poison-explosion-sheet.png", (128, 128)
         ),
         rocket_turret=pygame.image.load("assets/turrets/rocket1.png"),
         rocket_turret__reloading=pygame.image.load(
@@ -71,6 +68,7 @@ def load_assets() -> Assets:
             "assets/turrets/rocket-missile-explosion.png"
         ),
         burning_status_effect=pygame.image.load("assets/enemies/status/burning.png"),
+        poisoned_status_effect=pygame.image.load("assets/enemies/status/poisoned.png"),
     )
 
 

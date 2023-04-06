@@ -83,7 +83,7 @@ def generate_random_waves(count=99) -> list[SpawningWave]:
 
         if wave_no < 3:
             # training waves
-            default_wait = "L"
+            default_wait = "S"
             enemies = ["G"]
             weights = [1]
         elif wave_no < 10:

@@ -362,6 +362,29 @@ class Burning:
 
 
 @dataclasses.dataclass
+class Poisoned:
+    damage: int
+    damage_tick_rate: float
+
+    duration: float
+
+    ticks: int = 0
+    elapsed: float = 0.0
+
+    @property
+    def tick_due(self):
+        return self.elapsed >= (self.ticks + 1) * self.damage_tick_rate
+
+    @property
+    def expired(self):
+        return self.elapsed >= self.duration
+
+    def reapply(self, other: "Burning"):
+        # dont want to interrupt damage ticks, want to extend duration
+        self.duration = self.elapsed + other.duration
+
+
+@dataclasses.dataclass
 class Frozen:
     duration: float
 

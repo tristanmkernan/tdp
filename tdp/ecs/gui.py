@@ -86,7 +86,7 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
 
     # turret selection
     build_turret_panel = pygame_gui.elements.UIPanel(
-        relative_rect=pygame.Rect((10, 10), (panel_width, 170)),
+        relative_rect=pygame.Rect((10, 10), (panel_width, 190)),
         manager=manager,
         container=panel,
         anchors={"top_target": wave_panel},

@@ -22,6 +22,7 @@ from .components import (
     Lifetime,
     PlayerInputMachine,
     PlayerResources,
+    Poisoned,
     RemoveOnOutOfBounds,
     TimeToLive,
     TurretMachine,
@@ -42,6 +43,7 @@ from .entities import (
     create_flame_turret,
     create_bullet_turret,
     create_rocket_turret,
+    create_poison_turret,
     kill_enemy,
     spawn_commando,
     spawn_elite,
@@ -88,6 +90,7 @@ def add_systems(world: esper.World):
     world.add_processor(PlayerResourcesProcessor())
     world.add_processor(TurretStateProcessor())
     world.add_processor(BurningProcessor())
+    world.add_processor(PoisonedProcessor())
     world.add_processor(EnemyStatusVisualEffectProcessor())
     world.add_processor(TimeToLiveProcessor())
     world.add_processor(MovementProcessor())
@@ -452,6 +455,10 @@ class PlayerInputProcessor(esper.Processor):
                             new_turret_ent = create_lightning_turret(
                                 self.world, ent, assets=assets
                             )
+                        case TurretKind.Poison:
+                            new_turret_ent = create_poison_turret(
+                                self.world, ent, assets=assets
+                            )
 
                     subtract_resources_to_build_turret(
                         self.world, player_input_machine.turret_to_build
@@ -737,6 +744,26 @@ class BurningProcessor(esper.Processor):
                 self.world.remove_component(enemy_ent, Burning)
 
 
+class PoisonedProcessor(esper.Processor):
+    def process(self, *args, delta: float, **kwargs):
+        for enemy_ent, (enemy, poisoned) in self.world.get_components(Enemy, Poisoned):
+            poisoned.elapsed += delta
+
+            if poisoned.tick_due:
+                # TODO DRY take damage / delete entity
+                enemy.take_damage(poisoned.damage)
+
+                if enemy.is_dead:
+                    track_score_event(self.world, ScoreEventKind.EnemyKill)
+
+                    kill_enemy(self.world, enemy_ent)
+
+                poisoned.ticks += 1
+
+            if poisoned.expired:
+                self.world.remove_component(enemy_ent, Poisoned)
+
+
 class EnemyStatusVisualEffectProcessor(esper.Processor):
     def process(self, *args, assets: Assets, **kwargs):
         for enemy_ent, (enemy, bbox, renderable) in self.world.get_components(
@@ -777,10 +804,13 @@ class EnemyStatusVisualEffectProcessor(esper.Processor):
                 RenderableExtraKind.StatusEffectBar
             ]
 
-            status_effect_image = pygame.Surface((80, 18), pygame.SRCALPHA)
+            status_effect_image = pygame.Surface((80, 14), pygame.SRCALPHA)
 
             if self.world.has_component(enemy_ent, Burning):
                 status_effect_image.blit(assets.burning_status_effect, (0, 0))
+
+            if self.world.has_component(enemy_ent, Poisoned):
+                status_effect_image.blit(assets.poisoned_status_effect, (14, 0))
 
             # TODO
             # if self.world.has_component(enemy_ent, Slowed):

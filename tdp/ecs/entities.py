@@ -34,6 +34,7 @@ from .components import (
     Frozen,
     FrostMissile,
     TurretBuildZone,
+    Poisoned,
 )
 from .enums import (
     DamagesEnemyEffectKind,
@@ -401,6 +402,52 @@ def create_lightning_turret(
     )
 
 
+def create_poison_turret(
+    world: esper.World, build_zone_ent: int, *, assets: Assets
+) -> int:
+    bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
+
+    image = assets.poison_turret
+    image_rect = image.get_rect()
+
+    bbox = BoundingBox(rect=Rect(image_rect))
+    bbox.rect.center = bz_bbox.rect.center
+
+    upgrade_levels = {
+        TurretUpgradeablePropertyKind.Damage: 1,
+        TurretUpgradeablePropertyKind.RateOfFire: 1,
+        TurretUpgradeablePropertyKind.Range: 1,
+    }
+
+    base_stats = {
+        TurretUpgradeablePropertyKind.Damage: 3,
+        TurretUpgradeablePropertyKind.RateOfFire: 2_000.0,
+        TurretUpgradeablePropertyKind.Range: 300.0,
+    }
+
+    stat_changes_per_level = {
+        TurretUpgradeablePropertyKind.Damage: 3,
+        TurretUpgradeablePropertyKind.RateOfFire: -200.0,
+        TurretUpgradeablePropertyKind.Range: 50.0,
+    }
+
+    # for now, remove build zone entity, but may want to disable instead
+    world.delete_entity(build_zone_ent)
+
+    return world.create_entity(
+        TurretMachine(
+            state=TurretState.Idle,
+            kind=TurretKind.Poison,
+            rotates=False,
+            upgrade_levels=upgrade_levels,
+            base_stats=base_stats,
+            stat_changes_per_level=stat_changes_per_level,
+        ),
+        bbox,
+        Renderable(image=image, order=RenderableOrder.Objects),
+    )
+
+
 def fire_turret(
     world: esper.World,
     turret_ent: int,
@@ -424,6 +471,9 @@ def fire_turret(
 
         case TurretKind.Lightning:
             create_lightning_strike(world, turret_ent, enemy_ent, assets=assets)
+
+        case TurretKind.Poison:
+            create_poison_explosion(world, turret_ent, enemy_ent, assets=assets)
 
 
 def create_missile(
@@ -487,7 +537,7 @@ def create_rocket_missile_explosion(
         TimeToLive(duration=250.0),
         DamagesEnemy(
             damage=missile.damage,
-            pierced_count=9999,
+            pierces=9999,
             on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
         ),
     )
@@ -518,7 +568,7 @@ def create_lightning_strike(
         TimeToLive(duration=2 * 800.0),  # sync'd with animation
         DamagesEnemy(
             damage=turret_machine.damage,
-            pierced_count=9999,
+            pierces=9999,
             on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
             effects=[
                 DamagesEnemyEffect(
@@ -528,6 +578,49 @@ def create_lightning_strike(
                         range=250.0,
                         damage=int(turret_machine.damage / 2),
                         enemies_hit=[enemy_ent],
+                    ),
+                ),
+            ],
+        ),
+    )
+
+
+def create_poison_explosion(
+    world: esper.World,
+    turret_ent: int,
+    enemy_ent: int,
+    *,
+    assets: Assets,
+):
+    turret_machine = world.component_for_entity(turret_ent, TurretMachine)
+    enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
+
+    animated = Animated(frames=assets.poison_strike_frames, step=2 * 50.0)
+    base_image = animated.current_frame
+    image_rect = base_image.get_rect()
+
+    # explosion should spawn at missile center
+    explosion_rect = Rect((0, 0), image_rect.size)
+    explosion_rect.center = enemy_bbox.rect.center
+
+    world.create_entity(
+        animated,
+        BoundingBox(rect=explosion_rect),
+        Renderable(image=base_image, order=RenderableOrder.Objects),
+        TimeToLive(duration=2 * 800.0),  # sync'd with animation
+        DamagesEnemy(
+            damage=0,
+            pierces=9999,
+            effects=[
+                DamagesEnemyEffect(
+                    kind=DamagesEnemyEffectKind.AddsComponent,
+                    overwrite=False,
+                    component=Poisoned(
+                        # TODO consider scaling damage on tick rate or duration
+                        # or adding more upgradeable properties custom per turret
+                        damage=turret_machine.damage,
+                        damage_tick_rate=500.0,
+                        duration=3_000.0,
                     ),
                 ),
             ],
@@ -578,7 +671,7 @@ def create_lightning_strike_chain_lightning(
         TimeToLive(duration=2 * 800.0),  # synced with animation
         DamagesEnemy(
             damage=damage,
-            pierced_count=9999,
+            pierces=9999,
             on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
             effects=[
                 DamagesEnemyEffect(
@@ -732,7 +825,7 @@ def create_frost_missile_explosion(
         TimeToLive(duration=800.0),  # synced with animation
         DamagesEnemy(
             damage=frost.damage,
-            pierced_count=9999,
+            pierces=9999,
             on_collision_behavior=DamagesEnemyOnCollisionBehavior.RemoveComponent,
         ),
     )
