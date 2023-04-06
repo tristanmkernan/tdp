@@ -267,8 +267,13 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
 
 def cleanup_gui(gui_elements: GuiElements):
     for field in dataclasses.fields(gui_elements):
-        if gui_elem := getattr(gui_elements, field.name, None):
-            gui_elem.kill()
+        if value := getattr(gui_elements, field.name, None):
+            match value:
+                case pygame_gui.core.UIElement() as gui_elem:
+                    gui_elem.kill()
+                case dict() as mapping:
+                    for gui_elem in mapping.values():
+                        gui_elem.kill()
 
 
 def sync_selected_turret_gui(
