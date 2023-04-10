@@ -23,6 +23,7 @@ from .components import (
     Enemy,
     PathGraph,
     PlayerInputMachine,
+    PlayerResearch,
     PlayerResources,
     ScoreTracker,
     Shocked,
@@ -44,22 +45,26 @@ from .enums import (
     RenderableExtraKind,
     RenderableExtraOrder,
     RenderableOrder,
+    ResearchKind,
     ScoreEventKind,
     TurretKind,
     TurretState,
     TurretUpgradeablePropertyKind,
 )
-from .resources import add_resources_from_turret_sale
+from .resources import RESEARCH_DURATIONS, add_resources_from_turret_sale
 
 from . import esper
 
 logger = logging.getLogger(__name__)
 
 
-def create_scoreboard(world: esper.World):
-    scoreboard = world.create_entity()
-
-    world.add_component(scoreboard, ScoreTracker())
+def create_player(world: esper.World) -> int:
+    return world.create_entity(
+        PlayerInputMachine(),
+        ScoreTracker(),
+        PlayerResources(money=PLAYER_STARTING_MONEY),
+        PlayerResearch(),
+    )
 
 
 def spawn_tank(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
@@ -980,16 +985,6 @@ def create_bullet(world: esper.World, turret_ent: int, enemy_ent: int) -> int:
     )
 
 
-def create_player_input(world: esper.World):
-    player_input = world.create_entity()
-
-    world.add_component(player_input, PlayerInputMachine())
-
-
-def create_player_resources(world: esper.World):
-    return world.create_entity(PlayerResources(money=PLAYER_STARTING_MONEY))
-
-
 def track_score_event(world: esper.World, kind: ScoreEventKind):
     _, score_tracker = world.get_component(ScoreTracker)[0]
 
@@ -1077,3 +1072,28 @@ def sell_turret(world: esper.World, turret_ent: int, *, assets: Assets):
 
     # delete turret
     world.delete_entity(turret_ent)
+
+
+def start_research(world: esper.World, player: int, research_kind: ResearchKind):
+    player_research = world.component_for_entity(player, PlayerResearch)
+
+    player_research.research_in_progress = research_kind
+    player_research.elapsed = 0.0
+    player_research.research_duration = RESEARCH_DURATIONS[research_kind]
+
+
+def research_incomplete(
+    world: esper.World, player: int, research_kind: ResearchKind
+) -> bool:
+    player_research = world.component_for_entity(player, PlayerResearch)
+
+    return (
+        research_kind not in player_research.completed
+        and research_kind != player_research.research_in_progress
+    )
+
+
+def player_researching_idle(world: esper.World, player: int) -> bool:
+    player_research = world.component_for_entity(player, PlayerResearch)
+
+    return player_research.research_in_progress is None

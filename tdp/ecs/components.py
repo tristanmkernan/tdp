@@ -11,6 +11,7 @@ from .enums import (
     RenderableExtraKind,
     RenderableExtraOrder,
     RenderableOrder,
+    ResearchKind,
     ScoreEventKind,
     TurretState,
     TurretKind,
@@ -458,3 +459,24 @@ class Animated:
     def advance_frame(self):
         self.current_frame_index = (self.current_frame_index + 1) % len(self.frames)
         self.elapsed = 0.0
+
+
+@dataclasses.dataclass
+class PlayerResearch:
+    completed: set[ResearchKind] = dataclasses.field(default_factory=set)
+
+    research_in_progress: ResearchKind | None = None
+    elapsed: float = 0.0
+    research_duration: float = 0.0
+
+    def reset_in_progress(self):
+        self.research_in_progress = None
+        self.elapsed = 0.0
+
+    @property
+    def research_complete(self):
+        return self.elapsed >= self.research_duration
+
+    @property
+    def current_progress(self):
+        return int(100 * self.elapsed / self.research_duration)

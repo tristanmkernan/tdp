@@ -6,7 +6,12 @@ from tdp.ecs.gui import GuiElements
 
 from .components import BoundingBox, TurretBuildZone, Enemy, TurretMachine
 from .types import PlayerAction
-from .enums import PlayerActionKind, enabled_turret_kinds, TurretUpgradeablePropertyKind
+from .enums import (
+    PlayerActionKind,
+    ResearchKind,
+    enabled_turret_kinds,
+    TurretUpgradeablePropertyKind,
+)
 
 from . import esper
 
@@ -46,6 +51,13 @@ def get_player_action_for_button_press(
             return {
                 "kind": PlayerActionKind.UpgradeTurretProperty,
                 "turret_property": upgradeable_property,
+            }
+
+    for research_kind in ResearchKind:
+        if ui_element == gui_elements.research_buttons[research_kind]:
+            return {
+                "kind": PlayerActionKind.StartResearch,
+                "research_kind": research_kind,
             }
 
     match ui_element:

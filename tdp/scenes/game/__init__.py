@@ -3,6 +3,7 @@ import pygame_gui
 
 from tdp.constants import PygameCustomEventType
 from tdp.ecs.assets import load_assets
+from tdp.ecs.entities import create_player
 from tdp.ecs.enums import InputEventKind
 from tdp.ecs.gui import build_gui, cleanup_gui
 from tdp.ecs.world import build_world
@@ -27,6 +28,7 @@ class GameScene(Scene):
         self.gui_elements = build_gui(self.gui_manager)
         self.assets = load_assets()
         self.world = build_world(self.map_name)
+        self.player = create_player(self.world)
 
     def run(self):
         running = True
@@ -83,6 +85,7 @@ class GameScene(Scene):
                 player_input_events=input_events,
                 gui_elements=self.gui_elements,
                 debug=False,
+                player=self.player,
             )
 
         return {"kind": SceneEventKind.Quit}

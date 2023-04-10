@@ -26,6 +26,8 @@ class PlayerActionKind(enum.IntEnum):
     UpgradeTurretProperty = enum.auto()
     SellTurret = enum.auto()
 
+    StartResearch = enum.auto()
+
     ExitGame = enum.auto()
 
 
@@ -125,3 +127,12 @@ class DamagesEnemyOnCollisionBehavior(enum.IntEnum):
 class DamagesEnemyEffectKind(enum.IntEnum):
     AddsComponent = enum.auto()
     DynamicCreator = enum.auto()
+
+
+class ResearchKind(enum.IntEnum):
+    UnlockFlameThrowerTurret = enum.auto()
+    UnlockRocketTurret = enum.auto()
+    UnlockLightningTurret = enum.auto()
+    UnlockPoisonTurret = enum.auto()
+    UnlockTornadoTurret = enum.auto()
+    UnlockExtendedUpgrades = enum.auto()

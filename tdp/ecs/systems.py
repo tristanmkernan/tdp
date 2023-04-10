@@ -11,7 +11,12 @@ from tdp.constants import (
 )
 
 from .assets import Assets
-from .gui import GuiElements, sync_selected_turret_gui
+from .gui import (
+    GuiElements,
+    sync_research_gui,
+    sync_selected_turret_gui,
+    sync_turret_build_buttons_ui,
+)
 from .types import PlayerAction
 from .components import (
     Animated,
@@ -22,6 +27,7 @@ from .components import (
     Enemy,
     Lifetime,
     PlayerInputMachine,
+    PlayerResearch,
     PlayerResources,
     Poisoned,
     RemoveOnOutOfBounds,
@@ -48,10 +54,13 @@ from .entities import (
     create_poison_turret,
     create_tornado_turret,
     kill_enemy,
+    player_researching_idle,
+    research_incomplete,
     spawn_commando,
     spawn_elite,
     spawn_grunt,
     spawn_tank,
+    start_research,
     sync_selected_turret_range_extra_renderable,
     track_score_event,
     turret_property_can_be_upgraded,
@@ -76,8 +85,10 @@ from .enums import (
 from .rendering import render_composite, render_simple
 from .resources import (
     player_has_resources_to_build_turret,
+    player_has_resources_to_research,
     player_has_resources_to_upgrade_turret,
     subtract_resources_to_build_turret,
+    subtract_resources_to_research,
     subtract_resources_to_upgrade_turret,
 )
 from .util import (
@@ -91,6 +102,7 @@ logger = logging.getLogger(__name__)
 
 
 def add_systems(world: esper.World):
+    world.add_processor(ResearchProcessor())
     world.add_processor(PlayerResourcesProcessor())
     world.add_processor(TurretStateProcessor())
     world.add_processor(BuffetedProcessor())
@@ -329,7 +341,9 @@ class DamagesEnemyProcessor(esper.Processor):
 
 
 class PlayerInputProcessor(esper.Processor):
-    def process(self, *args, assets: Assets, gui_elements: GuiElements, **kwargs):
+    def process(
+        self, *args, player: int, assets: Assets, gui_elements: GuiElements, **kwargs
+    ):
         # TODO consider sorting by keydown, then keyup,
         #   in case we receive a sequence "out of order" like
         #   [W key up, W key down]
@@ -361,12 +375,14 @@ class PlayerInputProcessor(esper.Processor):
             PlayerInputState.Idle: {
                 PlayerActionKind.SetTurretToBuild,
                 PlayerActionKind.SelectTurret,
+                PlayerActionKind.StartResearch,
             },
             PlayerInputState.SelectingTurret: {
                 PlayerActionKind.SelectTurret,
                 PlayerActionKind.UpgradeTurretProperty,
                 PlayerActionKind.SetTurretToBuild,
                 PlayerActionKind.SellTurret,
+                PlayerActionKind.StartResearch,
             },
             PlayerInputState.BuildingTurret: {
                 PlayerActionKind.ClearTurretToBuild,
@@ -387,6 +403,23 @@ class PlayerInputProcessor(esper.Processor):
                     pygame.event.post(
                         pygame.event.Event(PygameCustomEventType.ChangeScene)
                     )
+                case {
+                    "kind": PlayerActionKind.StartResearch,
+                    "research_kind": research_kind,
+                }:
+                    if (
+                        player_has_resources_to_research(
+                            self.world, player, research_kind
+                        )
+                        and research_incomplete(self.world, player, research_kind)
+                        and player_researching_idle(self.world, player)
+                    ):
+                        start_research(self.world, player, research_kind)
+
+                        subtract_resources_to_research(
+                            self.world, player, research_kind
+                        )
+
                 case {"kind": PlayerActionKind.SelectTurret, "ent": ent}:
                     # toggle selected turret
                     if ent == player_input_machine.selected_turret:
@@ -494,22 +527,7 @@ class PlayerInputProcessor(esper.Processor):
                     changed_selected_turret = True
 
         if changed_turret_to_build:
-            # maybe add a border (or other visual effect) to the selected turret button
-
-            match player_input_machine.state:
-                case PlayerInputState.BuildingTurret:
-                    # reset button classes
-                    for gui_button in gui_elements.turret_build_buttons.values():
-                        gui_button.enable()
-
-                    if gui_button := gui_elements.turret_build_buttons.get(
-                        player_input_machine.turret_to_build
-                    ):
-                        gui_button.disable()
-                case _:
-                    # reset button classes
-                    for gui_button in gui_elements.turret_build_buttons.values():
-                        gui_button.enable()
+            sync_turret_build_buttons_ui(self.world, player, gui_elements)
 
         if changed_selected_turret:
             # sync range ring extra renderable for turret
@@ -882,3 +900,20 @@ class EnemyStatusVisualEffectProcessor(esper.Processor):
             status_effect_extra_renderable.image = status_effect_image
             status_effect_extra_renderable.order = RenderableExtraOrder.Over
             status_effect_extra_renderable.rect = status_effect_rect
+
+
+class ResearchProcessor(esper.Processor):
+    def process(
+        self, *args, gui_elements: GuiElements, player: int, delta: float, **kwargs
+    ):
+        player_research = self.world.component_for_entity(player, PlayerResearch)
+
+        if player_research.research_in_progress is not None:
+            player_research.elapsed += delta
+
+            if player_research.research_complete:
+                player_research.completed.add(player_research.research_in_progress)
+
+                player_research.reset_in_progress()
+
+        sync_research_gui(self.world, player, gui_elements)

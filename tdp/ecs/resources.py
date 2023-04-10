@@ -1,5 +1,5 @@
 from .components import PlayerResources
-from .enums import TurretKind, TurretUpgradeablePropertyKind
+from .enums import ResearchKind, TurretKind, TurretUpgradeablePropertyKind
 from . import esper
 
 
@@ -38,6 +38,44 @@ TURRET_UPGRADE_COSTS: dict[TurretUpgradeablePropertyKind, int] = {
 TURRET_SELL_REWARD = 25
 
 
+RESEARCH_NAMES: dict[ResearchKind, str] = {
+    ResearchKind.UnlockFlameThrowerTurret: "Flame Turret",
+    ResearchKind.UnlockRocketTurret: "Rocket Turret",
+    ResearchKind.UnlockLightningTurret: "Lightning Turret",
+    ResearchKind.UnlockPoisonTurret: "Poison Turret",
+    ResearchKind.UnlockTornadoTurret: "Tornado Turret",
+    ResearchKind.UnlockExtendedUpgrades: "Higher Upgrades",
+}
+
+RESEARCH_COSTS: dict[ResearchKind, int] = {
+    ResearchKind.UnlockFlameThrowerTurret: 250,
+    ResearchKind.UnlockRocketTurret: 250,
+    ResearchKind.UnlockLightningTurret: 1000,
+    ResearchKind.UnlockPoisonTurret: 1000,
+    ResearchKind.UnlockTornadoTurret: 1000,
+    ResearchKind.UnlockExtendedUpgrades: 1000,
+}
+
+RESEARCH_DURATIONS: dict[ResearchKind, int] = {
+    ResearchKind.UnlockFlameThrowerTurret: 10 * 1_000,
+    ResearchKind.UnlockRocketTurret: 10 * 1_000,
+    ResearchKind.UnlockLightningTurret: 30 * 1_000,
+    ResearchKind.UnlockPoisonTurret: 30 * 1_000,
+    ResearchKind.UnlockTornadoTurret: 30 * 1_000,
+    ResearchKind.UnlockExtendedUpgrades: 30 * 1_000,
+}
+
+TURRET_TO_RESEARCH: dict[TurretKind, ResearchKind] = {
+    TurretKind.Flame: ResearchKind.UnlockFlameThrowerTurret,
+    TurretKind.Rocket: ResearchKind.UnlockRocketTurret,
+    TurretKind.Lightning: ResearchKind.UnlockLightningTurret,
+    TurretKind.Poison: ResearchKind.UnlockPoisonTurret,
+    TurretKind.Tornado: ResearchKind.UnlockTornadoTurret,
+}
+
+RESEARCH_TO_TURRET = {v: k for k, v in TURRET_TO_RESEARCH.items()}
+
+
 def player_has_resources_to_build_turret(
     world: esper.World, turret_kind: TurretKind
 ) -> bool:
@@ -74,3 +112,19 @@ def add_resources_from_turret_sale(world: esper.World, turret_ent: int):
     player_resources = world.get_component(PlayerResources)[0][1]
 
     player_resources.money += TURRET_SELL_REWARD
+
+
+def player_has_resources_to_research(
+    world: esper.World, player: int, research_kind: ResearchKind
+) -> bool:
+    player_resources = world.component_for_entity(player, PlayerResources)
+
+    return player_resources.money >= RESEARCH_COSTS[research_kind]
+
+
+def subtract_resources_to_research(
+    world: esper.World, player: int, research_kind: ResearchKind
+) -> None:
+    player_resources = world.component_for_entity(player, PlayerResources)
+
+    player_resources.money -= RESEARCH_COSTS[research_kind]
