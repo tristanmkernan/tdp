@@ -3,20 +3,20 @@
 ###############
 
 [research.durations]
-unlock_flame_turret = 5000.0
-unlock_rocket_turret = 5000.0
+unlock_flame_turret = 10000.0
+unlock_rocket_turret = 10000.0
 unlock_lightning_turret = 30000.0
-unlock_poison_turret = 5000.0
+unlock_poison_turret = 30000.0
 unlock_tornado_turret = 30000.0
 unlock_extended_upgrades = 30000.0
 
 [research.costs]
 unlock_flame_turret = 250
 unlock_rocket_turret = 250
-unlock_lightning_turret = 250
-unlock_poison_turret = 250
-unlock_tornado_turret = 250
-unlock_extended_upgrades = 250
+unlock_lightning_turret = 2500
+unlock_poison_turret = 2500
+unlock_tornado_turret = 2500
+unlock_extended_upgrades = 2500
 
 ###############
 # Enemies
@@ -83,7 +83,7 @@ build = 250
 [turrets.rocket.base]
 damage = 15
 freq = 2000.0
-range = 500.0
+range = 200.0
 
 [turrets.rocket.per_level]
 damage = 10
@@ -96,7 +96,7 @@ build = 250
 [turrets.poison.base]
 damage = 3
 freq = 5000.0
-range = 200.0
+range = 100.0
 dot_tick_rate = 500.0
 dot_duration = 1500.0
 
@@ -116,7 +116,7 @@ build = 250
 [turrets.lightning.base]
 damage = 5
 freq = 5000.0
-range = 200.0
+range = 100.0
 
 [turrets.lightning.per_level]
 damage = 3
@@ -129,7 +129,7 @@ build = 250
 [turrets.tornado.base]
 damage = 1
 freq = 2000.0
-range = 200.0
+range = 100.0
 dot_tick_rate = 500.0
 dot_duration = 1500.0
 
