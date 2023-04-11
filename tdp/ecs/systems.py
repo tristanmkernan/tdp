@@ -369,7 +369,10 @@ class PlayerInputProcessor(esper.Processor):
         input_events = kwargs["player_input_events"]
         player_actions: list[PlayerAction] = []
 
-        player_input_machine = self.world.get_component(PlayerInputMachine)[0][1]
+        player_input_machine = self.world.component_for_entity(
+            player, PlayerInputMachine
+        )
+        player_research = self.world.component_for_entity(player, PlayerResearch)
 
         for input_event in input_events:
             logger.debug(
@@ -460,6 +463,7 @@ class PlayerInputProcessor(esper.Processor):
                         self.world,
                         player_input_machine.selected_turret,
                         turret_property,
+                        player_research,
                     ):
                         upgrade_turret(
                             self.world,

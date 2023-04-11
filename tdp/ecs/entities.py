@@ -10,7 +10,11 @@ from tdp.ecs.statsrepo import EnemyStats, StatsRepo
 from tdp.ecs.util import get_enemies_in_range
 
 
-from ..constants import MAX_TURRET_PROPERTY_UPGRADE_LEVEL, PLAYER_STARTING_MONEY
+from ..constants import (
+    MAX_TURRET_PROPERTY_UPGRADE_LEVEL_WITH_RESEARCH,
+    MAX_TURRET_PROPERTY_UPGRADE_LEVEL_WITHOUT_RESEARCH,
+    PLAYER_STARTING_MONEY,
+)
 
 from .assets import Assets
 from .components import (
@@ -338,7 +342,6 @@ def create_lightning_turret(
             state=TurretState.Idle,
             kind=TurretKind.Lightning,
             rotates=False,
-            upgrade_levels=upgrade_levels,
             base_stats=base_stats,
             stat_changes_per_level=stat_changes_per_level,
         ),
@@ -893,11 +896,18 @@ def track_score_event(world: esper.World, kind: ScoreEventKind):
 
 
 def turret_property_can_be_upgraded(
-    world: esper.World, turret_ent: int, turret_property: TurretUpgradeablePropertyKind
+    world: esper.World,
+    turret_ent: int,
+    turret_property: TurretUpgradeablePropertyKind,
+    player_research: PlayerResearch,
 ) -> bool:
     turret = world.component_for_entity(turret_ent, TurretMachine)
+    max_upgrade_level = MAX_TURRET_PROPERTY_UPGRADE_LEVEL_WITHOUT_RESEARCH
 
-    return turret.upgrade_levels[turret_property] < MAX_TURRET_PROPERTY_UPGRADE_LEVEL
+    if ResearchKind.UnlockExtendedUpgrades in player_research.completed:
+        max_upgrade_level = MAX_TURRET_PROPERTY_UPGRADE_LEVEL_WITH_RESEARCH
+
+    return turret.upgrade_levels[turret_property] < max_upgrade_level
 
 
 def upgrade_turret(
@@ -906,7 +916,8 @@ def upgrade_turret(
     turret = world.component_for_entity(turret_ent, TurretMachine)
 
     turret.upgrade_levels[turret_property] = min(
-        MAX_TURRET_PROPERTY_UPGRADE_LEVEL, turret.upgrade_levels[turret_property] + 1
+        MAX_TURRET_PROPERTY_UPGRADE_LEVEL_WITH_RESEARCH,
+        turret.upgrade_levels[turret_property] + 1,
     )
 
 
