@@ -558,7 +558,8 @@ def create_poison_totem(
     turret_machine = world.component_for_entity(turret_ent, TurretMachine)
     enemy_bbox = world.component_for_entity(enemy_ent, BoundingBox)
 
-    animated = Animated(frames=assets.poison_strike_frames, step=2 * 50.0)
+    # TODO non-linear animation step times?
+    animated = Animated(frames=assets.poison_strike_frames, step=16 * 50.0)
     base_image = animated.current_frame
     image_rect = base_image.get_rect()
 
@@ -570,7 +571,7 @@ def create_poison_totem(
         animated,
         BoundingBox(rect=explosion_rect),
         Renderable(image=base_image, order=RenderableOrder.Objects),
-        TimeToLive(duration=2 * 800.0),  # sync'd with animation
+        TimeToLive(duration=len(animated.frames) * 16 * 50.0),  # sync'd with animation
         DamagesEnemy(
             damage=0,
             pierces=9999,

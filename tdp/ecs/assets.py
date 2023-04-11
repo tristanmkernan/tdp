@@ -61,7 +61,7 @@ def load_assets() -> Assets:
         poison_turret=pygame.image.load("assets/turrets/poison1.png"),
         poison_strike_frames=load_sheet_frames(
             "assets/turrets/poison-explosion-sheet.png", (128, 128)
-        ),
+        )[5:12],
         rocket_turret=pygame.image.load("assets/turrets/rocket1.png"),
         rocket_turret__reloading=pygame.image.load(
             "assets/turrets/rocket1--reloading.png"
