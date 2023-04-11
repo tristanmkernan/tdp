@@ -42,11 +42,8 @@ def get_player_action_for_button_press(
             }
 
     for upgradeable_property in TurretUpgradeablePropertyKind:
-        if (
-            ui_element
-            == gui_elements.selected_turret_property_upgrade_buttons[
-                upgradeable_property
-            ]
+        if ui_element == gui_elements.selected_turret_property_upgrade_buttons.get(
+            upgradeable_property
         ):
             return {
                 "kind": PlayerActionKind.UpgradeTurretProperty,

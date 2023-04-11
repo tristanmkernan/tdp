@@ -5,8 +5,9 @@ import random
 import pygame
 
 from pygame import Rect, Vector2
+from tdp.ecs.statsrepo import EnemyStats, StatsRepo
 
-from tdp.ecs.util import get_closest_enemy, get_enemies_in_range
+from tdp.ecs.util import get_enemies_in_range
 
 
 from ..constants import MAX_TURRET_PROPERTY_UPGRADE_LEVEL, PLAYER_STARTING_MONEY
@@ -42,6 +43,7 @@ from .components import (
 from .enums import (
     DamagesEnemyEffectKind,
     DamagesEnemyOnCollisionBehavior,
+    EnemyKind,
     RenderableExtraKind,
     RenderableExtraOrder,
     RenderableOrder,
@@ -51,7 +53,7 @@ from .enums import (
     TurretState,
     TurretUpgradeablePropertyKind,
 )
-from .resources import RESEARCH_DURATIONS, add_resources_from_turret_sale
+from .resources import add_resources_from_turret_sale
 
 from . import esper
 
@@ -83,51 +85,46 @@ def spawn_tank(world: esper.World, spawn_point: int, level: int, *, assets: Asse
     )
 
 
-def spawn_grunt(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
-    base_health = 30
-    per_level = 8
-
-    max_health = base_health + level * per_level
-
-    base_bounty = 3
-    bounty_per_level = 0
-
-    bounty = base_bounty + level * bounty_per_level
-
+def spawn_grunt(
+    world: esper.World,
+    spawn_point: int,
+    level: int,
+    *,
+    assets: Assets,
+    stats_repo: StatsRepo,
+):
     return spawn_enemy(
-        world, spawn_point, assets.grunt, bounty=bounty, max_health=max_health
+        world, spawn_point, assets.grunt, level, stats_repo["enemies"][EnemyKind.Grunt]
     )
 
 
-def spawn_elite(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
-    base_health = 50
-    per_level = 25
-
-    max_health = base_health + level * per_level
-
-    base_bounty = 10
-    bounty_per_level = 0
-
-    bounty = base_bounty + level * bounty_per_level
-
+def spawn_elite(
+    world: esper.World,
+    spawn_point: int,
+    level: int,
+    *,
+    assets: Assets,
+    stats_repo: StatsRepo,
+):
     return spawn_enemy(
-        world, spawn_point, assets.elite, bounty=bounty, max_health=max_health
+        world, spawn_point, assets.elite, level, stats_repo["enemies"][EnemyKind.Elite]
     )
 
 
-def spawn_commando(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
-    base_health = 80
-    per_level = 40
-
-    max_health = base_health + level * per_level
-
-    base_bounty = 15
-    bounty_per_level = 0
-
-    bounty = base_bounty + level * bounty_per_level
-
+def spawn_commando(
+    world: esper.World,
+    spawn_point: int,
+    level: int,
+    *,
+    assets: Assets,
+    stats_repo: StatsRepo,
+):
     return spawn_enemy(
-        world, spawn_point, assets.commando, bounty=bounty, max_health=max_health
+        world,
+        spawn_point,
+        assets.commando,
+        level,
+        stats_repo["enemies"][EnemyKind.Commando],
     )
 
 
@@ -135,9 +132,13 @@ def spawn_enemy(
     world: esper.World,
     spawn_point: int,
     image: pygame.Surface,
-    bounty: int,
-    max_health: int,
+    level: int,
+    enemy_stats: EnemyStats,
 ):
+    max_health = enemy_stats["base_health"] + level * enemy_stats["health_per_level"]
+
+    bounty = enemy_stats["base_bounty"] + level * enemy_stats["bounty_per_level"]
+
     spawn_bbox = world.component_for_entity(spawn_point, BoundingBox)
     spawn_path_graph = world.component_for_entity(spawn_point, PathGraph)
 
@@ -178,7 +179,7 @@ def kill_enemy(world: esper.World, enemy_ent: int):
 
 
 def create_flame_turret(
-    world: esper.World, build_zone_ent: int, *, assets: Assets
+    world: esper.World, build_zone_ent: int, *, assets: Assets, stats_repo: StatsRepo
 ) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
@@ -188,23 +189,8 @@ def create_flame_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
-    upgrade_levels = {
-        TurretUpgradeablePropertyKind.Damage: 1,
-        TurretUpgradeablePropertyKind.RateOfFire: 1,
-        TurretUpgradeablePropertyKind.Range: 1,
-    }
-
-    base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 3,
-        TurretUpgradeablePropertyKind.RateOfFire: 25.0,
-        TurretUpgradeablePropertyKind.Range: 200.0,
-    }
-
-    stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 3,
-        TurretUpgradeablePropertyKind.RateOfFire: -5.0,
-        TurretUpgradeablePropertyKind.Range: 25.0,
-    }
+    base_stats = stats_repo["turrets"][TurretKind.Flame]["base"]
+    stat_changes_per_level = stats_repo["turrets"][TurretKind.Flame]["per_level"]
 
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
@@ -214,7 +200,6 @@ def create_flame_turret(
             state=TurretState.Idle,
             kind=TurretKind.Flame,
             firing_animation_duration=0,
-            upgrade_levels=upgrade_levels,
             base_stats=base_stats,
             stat_changes_per_level=stat_changes_per_level,
         ),
@@ -224,7 +209,7 @@ def create_flame_turret(
 
 
 def create_frost_turret(
-    world: esper.World, build_zone_ent: int, *, assets: Assets
+    world: esper.World, build_zone_ent: int, *, assets: Assets, stats_repo: StatsRepo
 ) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
@@ -270,7 +255,7 @@ def create_frost_turret(
 
 
 def create_rocket_turret(
-    world: esper.World, build_zone_ent: int, *, assets: Assets
+    world: esper.World, build_zone_ent: int, *, assets: Assets, stats_repo: StatsRepo
 ) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
@@ -280,23 +265,8 @@ def create_rocket_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
-    upgrade_levels = {
-        TurretUpgradeablePropertyKind.Damage: 1,
-        TurretUpgradeablePropertyKind.RateOfFire: 1,
-        TurretUpgradeablePropertyKind.Range: 1,
-    }
-
-    base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 15,
-        TurretUpgradeablePropertyKind.RateOfFire: 2000.0,
-        TurretUpgradeablePropertyKind.Range: 500.0,
-    }
-
-    stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 10,
-        TurretUpgradeablePropertyKind.RateOfFire: -150.0,
-        TurretUpgradeablePropertyKind.Range: 100.0,
-    }
+    base_stats = stats_repo["turrets"][TurretKind.Rocket]["base"]
+    stat_changes_per_level = stats_repo["turrets"][TurretKind.Rocket]["per_level"]
 
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
@@ -307,7 +277,6 @@ def create_rocket_turret(
             kind=TurretKind.Rocket,
             firing_animation_duration=0,
             reloading_duration=500.0,
-            upgrade_levels=upgrade_levels,
             base_stats=base_stats,
             stat_changes_per_level=stat_changes_per_level,
         ),
@@ -317,7 +286,7 @@ def create_rocket_turret(
 
 
 def create_bullet_turret(
-    world: esper.World, build_zone_ent: int, *, assets: Assets
+    world: esper.World, build_zone_ent: int, *, assets: Assets, stats_repo: StatsRepo
 ) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
@@ -327,23 +296,8 @@ def create_bullet_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
-    upgrade_levels = {
-        TurretUpgradeablePropertyKind.Damage: 1,
-        TurretUpgradeablePropertyKind.RateOfFire: 1,
-        TurretUpgradeablePropertyKind.Range: 1,
-    }
-
-    base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 10,
-        TurretUpgradeablePropertyKind.RateOfFire: 1000.0,
-        TurretUpgradeablePropertyKind.Range: 200.0,
-    }
-
-    stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 5,
-        TurretUpgradeablePropertyKind.RateOfFire: -75.0,
-        TurretUpgradeablePropertyKind.Range: 50.0,
-    }
+    base_stats = stats_repo["turrets"][TurretKind.Bullet]["base"]
+    stat_changes_per_level = stats_repo["turrets"][TurretKind.Bullet]["per_level"]
 
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
@@ -352,7 +306,6 @@ def create_bullet_turret(
         TurretMachine(
             state=TurretState.Idle,
             kind=TurretKind.Bullet,
-            upgrade_levels=upgrade_levels,
             base_stats=base_stats,
             stat_changes_per_level=stat_changes_per_level,
             # sync'd with max rate of fire
@@ -364,7 +317,7 @@ def create_bullet_turret(
 
 
 def create_lightning_turret(
-    world: esper.World, build_zone_ent: int, *, assets: Assets
+    world: esper.World, build_zone_ent: int, *, assets: Assets, stats_repo: StatsRepo
 ) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
@@ -374,23 +327,8 @@ def create_lightning_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
-    upgrade_levels = {
-        TurretUpgradeablePropertyKind.Damage: 1,
-        TurretUpgradeablePropertyKind.RateOfFire: 1,
-        TurretUpgradeablePropertyKind.Range: 1,
-    }
-
-    base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 5,
-        TurretUpgradeablePropertyKind.RateOfFire: 5_000.0,
-        TurretUpgradeablePropertyKind.Range: 300.0,
-    }
-
-    stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 3,
-        TurretUpgradeablePropertyKind.RateOfFire: -200.0,
-        TurretUpgradeablePropertyKind.Range: 50.0,
-    }
+    base_stats = stats_repo["turrets"][TurretKind.Lightning]["base"]
+    stat_changes_per_level = stats_repo["turrets"][TurretKind.Lightning]["per_level"]
 
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
@@ -410,7 +348,7 @@ def create_lightning_turret(
 
 
 def create_poison_turret(
-    world: esper.World, build_zone_ent: int, *, assets: Assets
+    world: esper.World, build_zone_ent: int, *, assets: Assets, stats_repo: StatsRepo
 ) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
@@ -420,23 +358,8 @@ def create_poison_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
-    upgrade_levels = {
-        TurretUpgradeablePropertyKind.Damage: 1,
-        TurretUpgradeablePropertyKind.RateOfFire: 1,
-        TurretUpgradeablePropertyKind.Range: 1,
-    }
-
-    base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 3,
-        TurretUpgradeablePropertyKind.RateOfFire: 2_000.0,
-        TurretUpgradeablePropertyKind.Range: 300.0,
-    }
-
-    stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 3,
-        TurretUpgradeablePropertyKind.RateOfFire: -200.0,
-        TurretUpgradeablePropertyKind.Range: 50.0,
-    }
+    base_stats = stats_repo["turrets"][TurretKind.Poison]["base"]
+    stat_changes_per_level = stats_repo["turrets"][TurretKind.Poison]["per_level"]
 
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
@@ -446,7 +369,6 @@ def create_poison_turret(
             state=TurretState.Idle,
             kind=TurretKind.Poison,
             rotates=False,
-            upgrade_levels=upgrade_levels,
             base_stats=base_stats,
             stat_changes_per_level=stat_changes_per_level,
         ),
@@ -456,7 +378,7 @@ def create_poison_turret(
 
 
 def create_tornado_turret(
-    world: esper.World, build_zone_ent: int, *, assets: Assets
+    world: esper.World, build_zone_ent: int, *, assets: Assets, stats_repo: StatsRepo
 ) -> int:
     bz_bbox = world.component_for_entity(build_zone_ent, BoundingBox)
 
@@ -466,23 +388,8 @@ def create_tornado_turret(
     bbox = BoundingBox(rect=Rect(image_rect))
     bbox.rect.center = bz_bbox.rect.center
 
-    upgrade_levels = {
-        TurretUpgradeablePropertyKind.Damage: 1,
-        TurretUpgradeablePropertyKind.RateOfFire: 1,
-        TurretUpgradeablePropertyKind.Range: 1,
-    }
-
-    base_stats = {
-        TurretUpgradeablePropertyKind.Damage: 1,
-        TurretUpgradeablePropertyKind.RateOfFire: 2_000.0,
-        TurretUpgradeablePropertyKind.Range: 300.0,
-    }
-
-    stat_changes_per_level = {
-        TurretUpgradeablePropertyKind.Damage: 1,
-        TurretUpgradeablePropertyKind.RateOfFire: -200.0,
-        TurretUpgradeablePropertyKind.Range: 50.0,
-    }
+    base_stats = stats_repo["turrets"][TurretKind.Tornado]["base"]
+    stat_changes_per_level = stats_repo["turrets"][TurretKind.Tornado]["per_level"]
 
     # for now, remove build zone entity, but may want to disable instead
     world.delete_entity(build_zone_ent)
@@ -492,7 +399,6 @@ def create_tornado_turret(
             state=TurretState.Idle,
             kind=TurretKind.Tornado,
             rotates=False,
-            upgrade_levels=upgrade_levels,
             base_stats=base_stats,
             stat_changes_per_level=stat_changes_per_level,
         ),
@@ -526,7 +432,7 @@ def fire_turret(
             create_lightning_strike(world, turret_ent, enemy_ent, assets=assets)
 
         case TurretKind.Poison:
-            create_poison_explosion(world, turret_ent, enemy_ent, assets=assets)
+            create_poison_totem(world, turret_ent, enemy_ent, assets=assets)
 
         case TurretKind.Tornado:
             create_tornado(world, turret_ent, enemy_ent, assets=assets)
@@ -642,7 +548,7 @@ def create_lightning_strike(
     )
 
 
-def create_poison_explosion(
+def create_poison_totem(
     world: esper.World,
     turret_ent: int,
     enemy_ent: int,
@@ -674,11 +580,9 @@ def create_poison_explosion(
                     kind=DamagesEnemyEffectKind.AddsComponent,
                     overwrite=False,
                     component=Poisoned(
-                        # TODO consider scaling damage on tick rate or duration
-                        # or adding more upgradeable properties custom per turret
                         damage=turret_machine.damage,
-                        damage_tick_rate=500.0,
-                        duration=3_000.0,
+                        damage_tick_rate=turret_machine.dot_tick_rate,
+                        duration=turret_machine.dot_duration,
                     ),
                 ),
             ],
@@ -722,11 +626,9 @@ def create_tornado(
                     kind=DamagesEnemyEffectKind.AddsComponent,
                     overwrite=False,
                     component=Buffeted(
-                        # TODO consider scaling damage on tick rate or duration
-                        # or adding more upgradeable properties custom per turret
                         damage=turret_machine.damage,
-                        damage_tick_rate=500.0,
-                        duration=500.0,
+                        damage_tick_rate=turret_machine.dot_tick_rate,
+                        duration=turret_machine.dot_duration,
                     ),
                 ),
             ],
@@ -845,11 +747,9 @@ def create_flame(
                     kind=DamagesEnemyEffectKind.AddsComponent,
                     overwrite=False,
                     component=Burning(
-                        # TODO consider scaling damage on tick rate or duration
-                        # or adding more upgradeable properties custom per turret
                         damage=turret_machine.damage,
-                        damage_tick_rate=500.0,
-                        duration=3_000.0,
+                        damage_tick_rate=turret_machine.dot_tick_rate,
+                        duration=turret_machine.dot_duration,
                     ),
                 )
             ],
@@ -1074,12 +974,16 @@ def sell_turret(world: esper.World, turret_ent: int, *, assets: Assets):
     world.delete_entity(turret_ent)
 
 
-def start_research(world: esper.World, player: int, research_kind: ResearchKind):
+def start_research(
+    world: esper.World, player: int, research_kind: ResearchKind, stats_repo: StatsRepo
+):
     player_research = world.component_for_entity(player, PlayerResearch)
 
     player_research.research_in_progress = research_kind
     player_research.elapsed = 0.0
-    player_research.research_duration = RESEARCH_DURATIONS[research_kind]
+    player_research.research_duration = stats_repo["research"]["durations"][
+        research_kind
+    ]
 
 
 def research_incomplete(

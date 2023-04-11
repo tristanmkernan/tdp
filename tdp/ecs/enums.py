@@ -63,21 +63,21 @@ class TurretState(enum.IntEnum):
     Reloading = enum.auto()
 
 
-class EnemyKind(enum.IntEnum):
-    Grunt = enum.auto()
-    Elite = enum.auto()
-    Commando = enum.auto()
-    Tank = enum.auto()
+class EnemyKind(enum.StrEnum):
+    Grunt = "grunt"
+    Elite = "elite"
+    Commando = "commando"
+    Tank = "tank"
 
 
-class TurretKind(enum.IntEnum):
-    Bullet = enum.auto()
-    Flame = enum.auto()
-    Rocket = enum.auto()
-    Frost = enum.auto()
-    Lightning = enum.auto()
-    Poison = enum.auto()
-    Tornado = enum.auto()
+class TurretKind(enum.StrEnum):
+    Bullet = "bullet"
+    Flame = "flame"
+    Rocket = "rocket"
+    Frost = "frost"
+    Lightning = "lightning"
+    Poison = "poison"
+    Tornado = "tornado"
 
 
 enabled_turret_kinds = [
@@ -90,10 +90,13 @@ enabled_turret_kinds = [
 ]
 
 
-class TurretUpgradeablePropertyKind(enum.IntEnum):
-    Damage = enum.auto()
-    RateOfFire = enum.auto()
-    Range = enum.auto()
+class TurretUpgradeablePropertyKind(enum.StrEnum):
+    Damage = "damage"
+    RateOfFire = "freq"
+    Range = "range"
+
+    DOTTickRate = "dot_tick_rate"
+    DOTDuration = "dot_duration"
 
 
 class PlayerInputState(enum.IntEnum):
@@ -129,10 +132,10 @@ class DamagesEnemyEffectKind(enum.IntEnum):
     DynamicCreator = enum.auto()
 
 
-class ResearchKind(enum.IntEnum):
-    UnlockFlameThrowerTurret = enum.auto()
-    UnlockRocketTurret = enum.auto()
-    UnlockLightningTurret = enum.auto()
-    UnlockPoisonTurret = enum.auto()
-    UnlockTornadoTurret = enum.auto()
-    UnlockExtendedUpgrades = enum.auto()
+class ResearchKind(enum.StrEnum):
+    UnlockFlameTurret = "unlock_flame_turret"
+    UnlockRocketTurret = "unlock_rocket_turret"
+    UnlockLightningTurret = "unlock_lightning_turret"
+    UnlockPoisonTurret = "unlock_poison_turret"
+    UnlockTornadoTurret = "unlock_tornado_turret"
+    UnlockExtendedUpgrades = "unlock_extended_upgrades"

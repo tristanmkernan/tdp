@@ -6,6 +6,7 @@ from tdp.ecs.assets import load_assets
 from tdp.ecs.entities import create_player
 from tdp.ecs.enums import InputEventKind
 from tdp.ecs.gui import build_gui, cleanup_gui
+from tdp.ecs.statsrepo import load_stats_repo
 from tdp.ecs.world import build_world
 from tdp.scenes.enums import SceneEventKind, SceneKind
 
@@ -25,7 +26,8 @@ class GameScene(Scene):
         super().__init__(screen, gui_manager, clock, **kwargs)
 
     def setup(self):
-        self.gui_elements = build_gui(self.gui_manager)
+        self.stats_repo = load_stats_repo()
+        self.gui_elements = build_gui(self.gui_manager, self.stats_repo)
         self.assets = load_assets()
         self.world = build_world(self.map_name)
         self.player = create_player(self.world)
@@ -86,6 +88,7 @@ class GameScene(Scene):
                 gui_elements=self.gui_elements,
                 debug=False,
                 player=self.player,
+                stats_repo=self.stats_repo,
             )
 
         return {"kind": SceneEventKind.Quit}

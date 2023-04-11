@@ -1,0 +1,141 @@
+###############
+# Research
+###############
+
+[research.durations]
+unlock_flame_turret = 5000.0
+unlock_rocket_turret = 5000.0
+unlock_lightning_turret = 30000.0
+unlock_poison_turret = 5000.0
+unlock_tornado_turret = 30000.0
+unlock_extended_upgrades = 30000.0
+
+[research.costs]
+unlock_flame_turret = 250
+unlock_rocket_turret = 250
+unlock_lightning_turret = 250
+unlock_poison_turret = 250
+unlock_tornado_turret = 250
+unlock_extended_upgrades = 250
+
+###############
+# Enemies
+###############
+
+[enemies.grunt]
+base_health = 30
+health_per_level = 8
+
+base_bounty = 3
+bounty_per_level = 0
+
+[enemies.elite]
+base_health = 50
+health_per_level =25
+
+base_bounty = 10
+bounty_per_level = 0
+
+[enemies.commando]
+base_health = 80
+health_per_level = 40
+
+base_bounty = 15
+bounty_per_level = 0
+
+###############
+# Turrets
+###############
+
+[turrets.bullet.costs]
+build = 50
+
+[turrets.bullet.base]
+damage = 10
+freq = 1000.0
+range = 200.0
+
+[turrets.bullet.per_level]
+damage = 5
+freq = -75.0
+range = 50.0
+
+[turrets.flame.costs]
+build = 250
+
+[turrets.flame.base]
+damage = 3
+freq = 25.0
+range = 200.0
+dot_tick_rate = 500.0
+dot_duration = 1500.0
+
+[turrets.flame.per_level]
+damage = 3
+freq = -5.0
+range = 25.0
+dot_tick_rate = -25.0
+dot_duration = 100.0
+
+[turrets.rocket.costs]
+build = 250
+
+[turrets.rocket.base]
+damage = 15
+freq = 2000.0
+range = 500.0
+
+[turrets.rocket.per_level]
+damage = 10
+freq = -150.0
+range = 50.0
+
+[turrets.poison.costs]
+build = 250
+
+[turrets.poison.base]
+damage = 3
+freq = 2000.0
+range = 200.0
+dot_tick_rate = 500.0
+dot_duration = 1500.0
+
+[turrets.poison.per_level]
+damage = 3
+freq = -200.0
+range = 25.0
+dot_tick_rate = -25.0
+dot_duration = 100.0
+
+[turrets.frost.costs]
+build = 250
+
+[turrets.lightning.costs]
+build = 250
+
+[turrets.lightning.base]
+damage = 5
+freq = 5000.0
+range = 200.0
+
+[turrets.lightning.per_level]
+damage = 3
+freq = -200.0
+range = 25.0
+
+[turrets.tornado.costs]
+build = 250
+
+[turrets.tornado.base]
+damage = 1
+freq = 2000.0
+range = 200.0
+dot_tick_rate = 500.0
+dot_duration = 1500.0
+
+[turrets.tornado.per_level]
+damage = 1
+freq = -75.0
+range = 25.0
+dot_tick_rate = -25.0
+dot_duration = 100.0

@@ -254,7 +254,7 @@ class TurretBuildZone:
 class TurretMachine:
     state: TurretState
     kind: TurretKind
-    upgrade_levels: dict[TurretUpgradeablePropertyKind, int]
+
     base_stats: dict[TurretUpgradeablePropertyKind, int | float]
     stat_changes_per_level: dict[TurretUpgradeablePropertyKind, int | float]
 
@@ -266,6 +266,10 @@ class TurretMachine:
     reloading_duration: float = 0.0
 
     idle_rotation_speed: float = 0.025
+
+    upgrade_levels: dict[TurretUpgradeablePropertyKind, int] = dataclasses.field(
+        default_factory=lambda: {k: 1 for k in TurretUpgradeablePropertyKind}
+    )
 
     @property
     def can_fire(self):
@@ -297,6 +301,14 @@ class TurretMachine:
     @property
     def range(self) -> float:
         return self._per_level_stat(TurretUpgradeablePropertyKind.Range)
+
+    @property
+    def dot_tick_rate(self) -> float:
+        return self._per_level_stat(TurretUpgradeablePropertyKind.DOTTickRate)
+
+    @property
+    def dot_duration(self) -> float:
+        return self._per_level_stat(TurretUpgradeablePropertyKind.DOTDuration)
 
 
 @dataclasses.dataclass

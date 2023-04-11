@@ -7,9 +7,9 @@
 - [X] Enemy health bars
 - [ ] Rocket turret reload progress bar
 - [X] Turret upgrades
-- [-] Status effects
+- [X] Status effects
   - [X] On fire
-  - [ ] Slow or frozen + visual effects
+  - [X] Slow or frozen + visual effects
 - [ ] More enemy types
 - [ ] Smart enemies
   - [ ] Jetpack or digging enemies
@@ -18,10 +18,10 @@
   - [ ] High scores
   - [X] Game over
   - [X] Map selection
-- [-] More turret types [2/3]
+- [X] More turret types [3/3]
   - [X] Rocket
   - [X] Freezing
-  - [ ] Slowing
+  - [X] Slowing
 - [X] Damage should be dynamic
   - Interacts with upgrades
 - [ ] Enemy death leaves skull on ground
@@ -39,9 +39,9 @@
 - [ ] Spawning config should support enemy health modifiers
   - Maybe health generally increases over time?
   - Or just stick to different unit types
-- [ ] Research system for unlocking turret types and upgrades
+- [X] Research system for unlocking turret types and upgrades
 - [X] Game over
-- [ ] Sell / scrap turrets
+- [X] Sell / scrap turrets
 - [X] Temporarily hide frost turret
   - Until status effect interactions / game design is worked out
 - [ ] Pause
@@ -56,4 +56,4 @@
 - [X] Burning component is replaced, meaning that units don't take damage while repeatedly being hit
 - [X] Flame turret flames should have limited lifespan / range
   - It's odd that the flames can travel across the map
-- [ ] Enemies dying from fire do not give bounty
+- [X] Enemies dying from fire do not give bounty

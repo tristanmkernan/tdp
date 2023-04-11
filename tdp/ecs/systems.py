@@ -9,6 +9,7 @@ from tdp.constants import (
     MAP_WIDTH,
     PygameCustomEventType,
 )
+from tdp.ecs.statsrepo import StatsRepo
 
 from .assets import Assets
 from .gui import (
@@ -184,7 +185,15 @@ class MovementProcessor(esper.Processor):
 
 
 class SpawningProcessor(esper.Processor):
-    def process(self, *args, delta, gui_elements: GuiElements, assets, **kwargs):
+    def process(
+        self,
+        *args,
+        delta: float,
+        stats_repo: StatsRepo,
+        gui_elements: GuiElements,
+        assets,
+        **kwargs,
+    ):
         # NOTE: only one spawn point at the moment
         spawning_ent, spawning = self.world.get_component(Spawning)[0]
 
@@ -201,6 +210,7 @@ class SpawningProcessor(esper.Processor):
                             spawning_ent,
                             level=spawning.current_wave_index,
                             assets=assets,
+                            stats_repo=stats_repo,
                         )
                     case EnemyKind.Tank:
                         enemy = spawn_tank(
@@ -208,6 +218,7 @@ class SpawningProcessor(esper.Processor):
                             spawning_ent,
                             level=spawning.current_wave_index,
                             assets=assets,
+                            stats_repo=stats_repo,
                         )
                     case EnemyKind.Elite:
                         enemy = spawn_elite(
@@ -215,6 +226,7 @@ class SpawningProcessor(esper.Processor):
                             spawning_ent,
                             level=spawning.current_wave_index,
                             assets=assets,
+                            stats_repo=stats_repo,
                         )
                     case EnemyKind.Commando:
                         enemy = spawn_commando(
@@ -222,6 +234,7 @@ class SpawningProcessor(esper.Processor):
                             spawning_ent,
                             level=spawning.current_wave_index,
                             assets=assets,
+                            stats_repo=stats_repo,
                         )
 
                 wave.enemy_spawn_count += 1
@@ -342,7 +355,13 @@ class DamagesEnemyProcessor(esper.Processor):
 
 class PlayerInputProcessor(esper.Processor):
     def process(
-        self, *args, player: int, assets: Assets, gui_elements: GuiElements, **kwargs
+        self,
+        *args,
+        player: int,
+        stats_repo: StatsRepo,
+        assets: Assets,
+        gui_elements: GuiElements,
+        **kwargs,
     ):
         # TODO consider sorting by keydown, then keyup,
         #   in case we receive a sequence "out of order" like
@@ -409,15 +428,15 @@ class PlayerInputProcessor(esper.Processor):
                 }:
                     if (
                         player_has_resources_to_research(
-                            self.world, player, research_kind
+                            self.world, player, research_kind, stats_repo
                         )
                         and research_incomplete(self.world, player, research_kind)
                         and player_researching_idle(self.world, player)
                     ):
-                        start_research(self.world, player, research_kind)
+                        start_research(self.world, player, research_kind, stats_repo)
 
                         subtract_resources_to_research(
-                            self.world, player, research_kind
+                            self.world, player, research_kind, stats_repo
                         )
 
                 case {"kind": PlayerActionKind.SelectTurret, "ent": ent}:
@@ -468,7 +487,9 @@ class PlayerInputProcessor(esper.Processor):
                     "kind": PlayerActionKind.SetTurretToBuild,
                     "turret_kind": turret_kind,
                 }:
-                    if player_has_resources_to_build_turret(self.world, turret_kind):
+                    if player_has_resources_to_build_turret(
+                        self.world, turret_kind, stats_repo
+                    ):
                         player_input_machine.turret_to_build = turret_kind
                         player_input_machine.state = PlayerInputState.BuildingTurret
 
@@ -485,38 +506,22 @@ class PlayerInputProcessor(esper.Processor):
                     # TODO also could have hover state, building time, so on
                     new_turret_ent = None
 
-                    match player_input_machine.turret_to_build:
-                        case TurretKind.Flame:
-                            new_turret_ent = create_flame_turret(
-                                self.world, ent, assets=assets
-                            )
-                        case TurretKind.Bullet:
-                            new_turret_ent = create_bullet_turret(
-                                self.world, ent, assets=assets
-                            )
-                        case TurretKind.Rocket:
-                            new_turret_ent = create_rocket_turret(
-                                self.world, ent, assets=assets
-                            )
-                        case TurretKind.Frost:
-                            new_turret_ent = create_frost_turret(
-                                self.world, ent, assets=assets
-                            )
-                        case TurretKind.Lightning:
-                            new_turret_ent = create_lightning_turret(
-                                self.world, ent, assets=assets
-                            )
-                        case TurretKind.Poison:
-                            new_turret_ent = create_poison_turret(
-                                self.world, ent, assets=assets
-                            )
-                        case TurretKind.Tornado:
-                            new_turret_ent = create_tornado_turret(
-                                self.world, ent, assets=assets
-                            )
+                    turret_creator_map = {
+                        TurretKind.Flame: create_flame_turret,
+                        TurretKind.Bullet: create_bullet_turret,
+                        TurretKind.Rocket: create_rocket_turret,
+                        TurretKind.Frost: create_frost_turret,
+                        TurretKind.Lightning: create_lightning_turret,
+                        TurretKind.Poison: create_poison_turret,
+                        TurretKind.Tornado: create_tornado_turret,
+                    }
+
+                    new_turret_ent = turret_creator_map[
+                        player_input_machine.turret_to_build
+                    ](self.world, ent, assets=assets, stats_repo=stats_repo)
 
                     subtract_resources_to_build_turret(
-                        self.world, player_input_machine.turret_to_build
+                        self.world, player_input_machine.turret_to_build, stats_repo
                     )
 
                     player_input_machine.state = PlayerInputState.SelectingTurret

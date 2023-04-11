@@ -5,6 +5,7 @@ import pygame_gui
 
 from tdp.constants import GUI_WIDTH, GUI_HEIGHT, GUI_X_OFFSET, GUI_Y_OFFSET
 
+from .statsrepo import StatsRepo
 from .components import PlayerInputMachine, PlayerResearch, TurretMachine
 from .enums import (
     ResearchKind,
@@ -13,10 +14,7 @@ from .enums import (
     enabled_turret_kinds,
 )
 from .resources import (
-    RESEARCH_COSTS,
     RESEARCH_NAMES,
-    RESEARCH_TO_TURRET,
-    TURRET_BUILD_COSTS,
     TURRET_SELL_REWARD,
     TURRET_TO_RESEARCH,
     TURRET_UPGRADE_COSTS,
@@ -62,7 +60,7 @@ class GuiElements:
     game_over_main_menu_button: pygame_gui.elements.UIButton
 
 
-def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
+def build_gui(manager: pygame_gui.UIManager, stats_repo: StatsRepo) -> GuiElements:
     panel = pygame_gui.elements.UIPanel(
         relative_rect=pygame.Rect(GUI_X_OFFSET, GUI_Y_OFFSET, GUI_WIDTH, GUI_HEIGHT),
         manager=manager,
@@ -129,9 +127,11 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
         if previous_turret_build_button is not None:
             anchors = {"top_target": previous_turret_build_button}
 
+        cost = stats_repo["turrets"][turret_kind]["costs"]["build"]
+
         turret_build_button = pygame_gui.elements.UIButton(
             relative_rect=pygame.Rect((2, 0), (subpanel_width, 24)),
-            text=f"{TURRET_NAMES[turret_kind]} (${TURRET_BUILD_COSTS[turret_kind]})",
+            text=f"{TURRET_NAMES[turret_kind]} (${cost})",
             manager=manager,
             container=build_turret_panel,
             anchors=anchors,
@@ -187,9 +187,11 @@ def build_gui(manager: pygame_gui.UIManager) -> GuiElements:
         if previous_research_button is not None:
             anchors = {"top_target": previous_research_button}
 
+        cost = stats_repo["research"]["costs"][research_kind]
+
         research_button = pygame_gui.elements.UIButton(
             relative_rect=pygame.Rect((2, 0), (subpanel_width, 24)),
-            text=f"{RESEARCH_NAMES[research_kind]} (${RESEARCH_COSTS[research_kind]})",
+            text=f"{RESEARCH_NAMES[research_kind]} (${cost})",
             manager=manager,
             container=research_panel,
             anchors=anchors,
