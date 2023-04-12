@@ -25,13 +25,16 @@ unlock_extended_upgrades = 2500
 [enemies.grunt]
 base_health = 30
 health_per_level = 8
+speed = 0.15
 
 base_bounty = 3
 bounty_per_level = 0
 
+
 [enemies.elite]
 base_health = 50
 health_per_level =25
+speed = 0.10
 
 base_bounty = 10
 bounty_per_level = 0
@@ -39,9 +42,35 @@ bounty_per_level = 0
 [enemies.commando]
 base_health = 80
 health_per_level = 40
+speed = 0.075
 
 base_bounty = 15
 bounty_per_level = 0
+
+[enemies.tank]
+base_health = 300
+health_per_level = 100
+speed = 0.02
+
+base_bounty = 150
+bounty_per_level = 0
+
+[enemies.fighterplane]
+base_health = 100
+health_per_level = 40
+speed = 0.25
+
+base_bounty = 25
+bounty_per_level = 0
+
+[enemies.transportplane]
+base_health = 300
+health_per_level = 100
+speed = 0.2
+
+base_bounty = 50
+bounty_per_level = 0
+
 
 ###############
 # Turrets

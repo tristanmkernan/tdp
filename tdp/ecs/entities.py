@@ -73,19 +73,16 @@ def create_player(world: esper.World) -> int:
     )
 
 
-def spawn_tank(world: esper.World, spawn_point: int, level: int, *, assets: Assets):
-    base_health = 100
-    per_level = 5
-
-    max_health = base_health + level * per_level
-
-    base_bounty = 25
-    bounty_per_level = 5
-
-    bounty = base_bounty + level * bounty_per_level
-
+def spawn_tank(
+    world: esper.World,
+    spawn_point: int,
+    level: int,
+    *,
+    assets: Assets,
+    stats_repo: StatsRepo,
+):
     return spawn_enemy(
-        world, spawn_point, assets.tank, bounty=bounty, max_health=max_health
+        world, spawn_point, assets.tank, level, stats_repo["enemies"][EnemyKind.Tank]
     )
 
 
@@ -132,6 +129,40 @@ def spawn_commando(
     )
 
 
+def spawn_fighter_plane(
+    world: esper.World,
+    spawn_point: int,
+    level: int,
+    *,
+    assets: Assets,
+    stats_repo: StatsRepo,
+):
+    return spawn_enemy(
+        world,
+        spawn_point,
+        assets.fighter_plane,
+        level,
+        stats_repo["enemies"][EnemyKind.FighterPlane],
+    )
+
+
+def spawn_transport_plane(
+    world: esper.World,
+    spawn_point: int,
+    level: int,
+    *,
+    assets: Assets,
+    stats_repo: StatsRepo,
+):
+    return spawn_enemy(
+        world,
+        spawn_point,
+        assets.transport_plane,
+        level,
+        stats_repo["enemies"][EnemyKind.TransportPlane],
+    )
+
+
 def spawn_enemy(
     world: esper.World,
     spawn_point: int,
@@ -150,7 +181,8 @@ def spawn_enemy(
 
     return world.create_entity(
         Enemy(bounty=bounty, max_health=max_health),
-        Velocity(),
+        # initialize velocity with unit speed
+        Velocity(vec=Vector2(enemy_stats["speed"], 0)),
         BoundingBox(
             rect=Rect(
                 spawn_bbox.rect.x,

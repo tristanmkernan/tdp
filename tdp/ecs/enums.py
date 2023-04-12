@@ -68,6 +68,8 @@ class EnemyKind(enum.StrEnum):
     Elite = "elite"
     Commando = "commando"
     Tank = "tank"
+    FighterPlane = "fighterplane"
+    TransportPlane = "transportplane"
 
 
 class TurretKind(enum.StrEnum):

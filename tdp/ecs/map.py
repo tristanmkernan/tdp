@@ -14,7 +14,7 @@ from .components import (
     TurretBuildZone,
 )
 from .enums import RenderableOrder, ObjectKind
-from .waves import generate_random_waves, generate_waves
+from .waves import generate_random_waves
 
 from . import esper
 

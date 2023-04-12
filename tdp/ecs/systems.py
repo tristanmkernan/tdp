@@ -59,8 +59,10 @@ from .entities import (
     research_incomplete,
     spawn_commando,
     spawn_elite,
+    spawn_fighter_plane,
     spawn_grunt,
     spawn_tank,
+    spawn_transport_plane,
     start_research,
     sync_selected_turret_range_extra_renderable,
     track_score_event,
@@ -203,39 +205,22 @@ class SpawningProcessor(esper.Processor):
 
         match current_step:
             case {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": enemy_kind}:
-                match enemy_kind:
-                    case EnemyKind.Grunt:
-                        enemy = spawn_grunt(
-                            self.world,
-                            spawning_ent,
-                            level=spawning.current_wave_index,
-                            assets=assets,
-                            stats_repo=stats_repo,
-                        )
-                    case EnemyKind.Tank:
-                        enemy = spawn_tank(
-                            self.world,
-                            spawning_ent,
-                            level=spawning.current_wave_index,
-                            assets=assets,
-                            stats_repo=stats_repo,
-                        )
-                    case EnemyKind.Elite:
-                        enemy = spawn_elite(
-                            self.world,
-                            spawning_ent,
-                            level=spawning.current_wave_index,
-                            assets=assets,
-                            stats_repo=stats_repo,
-                        )
-                    case EnemyKind.Commando:
-                        enemy = spawn_commando(
-                            self.world,
-                            spawning_ent,
-                            level=spawning.current_wave_index,
-                            assets=assets,
-                            stats_repo=stats_repo,
-                        )
+                spawning_map = {
+                    EnemyKind.Grunt: spawn_grunt,
+                    EnemyKind.Tank: spawn_tank,
+                    EnemyKind.Elite: spawn_elite,
+                    EnemyKind.Commando: spawn_commando,
+                    EnemyKind.FighterPlane: spawn_fighter_plane,
+                    EnemyKind.TransportPlane: spawn_transport_plane,
+                }
+
+                enemy = spawning_map[enemy_kind](
+                    self.world,
+                    spawning_ent,
+                    level=spawning.current_wave_index,
+                    assets=assets,
+                    stats_repo=stats_repo,
+                )
 
                 wave.enemy_spawn_count += 1
                 wave.advance()
@@ -586,10 +571,9 @@ class PathingProcessor(esper.Processor):
             # update velocity
             target_vertex = pathing.current_target
 
-            # TODO speed should be determined by base velocity, scalable
             vec = (target_vertex - Vector2(*bbox.rect.center)).normalize()
 
-            vec.scale_to_length(0.1)
+            vec.scale_to_length(vel.vec.magnitude())
 
             vel.vec = vec
 

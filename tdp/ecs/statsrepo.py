@@ -10,6 +10,7 @@ class EnemyStats(TypedDict):
     health_per_level: int
     base_bounty: int
     bounty_per_level: int
+    speed: float
 
 
 class TurretStats(TypedDict):
