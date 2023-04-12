@@ -952,6 +952,14 @@ def sync_selected_turret_range_extra_renderable(
         width=2,
     )
 
+    pygame.draw.circle(
+        range_image,
+        "#ff3300",
+        (range_image_dim / 2, range_image_dim / 2),
+        renderable.image.get_rect().width / 2,
+        width=2,
+    )
+
     # positioned centered on turret
     range_rect = range_image.get_rect()
     range_rect.center = bbox.rect.center
