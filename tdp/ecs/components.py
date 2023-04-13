@@ -8,6 +8,8 @@ from pygame import Rect, Vector2, Surface
 from .assets import Assets
 from .enums import (
     DamagesEnemyOnCollisionBehavior,
+    EnemyKind,
+    OnDeathBehaviorKind,
     RenderableExtraKind,
     RenderableExtraOrder,
     RenderableOrder,
@@ -492,3 +494,22 @@ class PlayerResearch:
     @property
     def current_progress(self):
         return int(100 * self.elapsed / self.research_duration)
+
+
+@dataclasses.dataclass
+class OnDeathBehavior:
+    kind: OnDeathBehaviorKind
+
+    enemies: list[EnemyKind] = dataclasses.field(default_factory=list)
+
+
+@dataclasses.dataclass
+class SpawnsEnemies:
+    kind: EnemyKind
+    rate: float
+
+    elapsed: float = 0.0
+
+    @property
+    def due_to_spawn(self):
+        return self.elapsed >= self.rate

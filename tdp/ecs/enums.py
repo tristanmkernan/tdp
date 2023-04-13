@@ -141,3 +141,7 @@ class ResearchKind(enum.StrEnum):
     UnlockPoisonTurret = "unlock_poison_turret"
     UnlockTornadoTurret = "unlock_tornado_turret"
     UnlockExtendedUpgrades = "unlock_extended_upgrades"
+
+
+class OnDeathBehaviorKind(enum.IntEnum):
+    SpawnUnits = enum.auto()

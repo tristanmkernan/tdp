@@ -33,6 +33,7 @@ from .components import (
     Poisoned,
     RemoveOnOutOfBounds,
     Shocked,
+    SpawnsEnemies,
     TimeToLive,
     TurretMachine,
     Velocity,
@@ -57,12 +58,7 @@ from .entities import (
     kill_enemy,
     player_researching_idle,
     research_incomplete,
-    spawn_commando,
-    spawn_elite,
-    spawn_fighter_plane,
-    spawn_grunt,
-    spawn_tank,
-    spawn_transport_plane,
+    spawning_map,
     start_research,
     sync_selected_turret_range_extra_renderable,
     track_score_event,
@@ -105,6 +101,7 @@ logger = logging.getLogger(__name__)
 
 
 def add_systems(world: esper.World):
+    world.add_processor(SpawnsEnemiesProcessor())
     world.add_processor(ResearchProcessor())
     world.add_processor(PlayerResourcesProcessor())
     world.add_processor(TurretStateProcessor())
@@ -205,15 +202,6 @@ class SpawningProcessor(esper.Processor):
 
         match current_step:
             case {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": enemy_kind}:
-                spawning_map = {
-                    EnemyKind.Grunt: spawn_grunt,
-                    EnemyKind.Tank: spawn_tank,
-                    EnemyKind.Elite: spawn_elite,
-                    EnemyKind.Commando: spawn_commando,
-                    EnemyKind.FighterPlane: spawn_fighter_plane,
-                    EnemyKind.TransportPlane: spawn_transport_plane,
-                }
-
                 enemy = spawning_map[enemy_kind](
                     self.world,
                     spawning_ent,
@@ -240,6 +228,28 @@ class SpawningProcessor(esper.Processor):
         gui_elements.wave_label.set_text(f"Wave {spawning.current_wave_num}")
 
         gui_elements.wave_progress.set_current_progress(wave.progress)
+
+
+class SpawnsEnemiesProcessor(esper.Processor):
+    def process(
+        self, *args, delta: float, assets: Assets, stats_repo: StatsRepo, **kwargs
+    ):
+        # TODO could refactor current level
+        spawning = self.world.get_component(Spawning)[0][1]
+
+        for ent, spawns_enemies in self.world.get_component(SpawnsEnemies):
+            spawns_enemies.elapsed += delta
+
+            if spawns_enemies.due_to_spawn:
+                spawning_map[spawns_enemies.kind](
+                    self.world,
+                    ent,
+                    level=spawning.current_wave_index,
+                    assets=assets,
+                    stats_repo=stats_repo,
+                )
+
+                spawns_enemies.elapsed = 0.0
 
 
 class RenderingProcessor(esper.Processor):

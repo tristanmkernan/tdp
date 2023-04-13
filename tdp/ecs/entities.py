@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Callable
 import logging
 import random
 
@@ -26,12 +27,15 @@ from .components import (
     DamagesEnemyEffect,
     Despawnable,
     Enemy,
+    OnDeathBehavior,
     PathGraph,
     PlayerInputMachine,
     PlayerResearch,
     PlayerResources,
     ScoreTracker,
     Shocked,
+    Spawning,
+    SpawnsEnemies,
     TurretMachine,
     UnitPathing,
     Velocity,
@@ -48,6 +52,7 @@ from .enums import (
     DamagesEnemyEffectKind,
     DamagesEnemyOnCollisionBehavior,
     EnemyKind,
+    OnDeathBehaviorKind,
     RenderableExtraKind,
     RenderableExtraOrder,
     RenderableOrder,
@@ -82,7 +87,17 @@ def spawn_tank(
     stats_repo: StatsRepo,
 ):
     return spawn_enemy(
-        world, spawn_point, assets.tank, level, stats_repo["enemies"][EnemyKind.Tank]
+        world,
+        spawn_point,
+        assets.tank,
+        level,
+        stats_repo["enemies"][EnemyKind.Tank],
+        additional_components=[
+            OnDeathBehavior(
+                kind=OnDeathBehaviorKind.SpawnUnits,
+                enemies=[EnemyKind.Commando, EnemyKind.Commando, EnemyKind.Commando],
+            )
+        ],
     )
 
 
@@ -95,7 +110,11 @@ def spawn_grunt(
     stats_repo: StatsRepo,
 ):
     return spawn_enemy(
-        world, spawn_point, assets.grunt, level, stats_repo["enemies"][EnemyKind.Grunt]
+        world,
+        spawn_point,
+        assets.grunt,
+        level,
+        stats_repo["enemies"][EnemyKind.Grunt],
     )
 
 
@@ -108,7 +127,11 @@ def spawn_elite(
     stats_repo: StatsRepo,
 ):
     return spawn_enemy(
-        world, spawn_point, assets.elite, level, stats_repo["enemies"][EnemyKind.Elite]
+        world,
+        spawn_point,
+        assets.elite,
+        level,
+        stats_repo["enemies"][EnemyKind.Elite],
     )
 
 
@@ -160,7 +183,18 @@ def spawn_transport_plane(
         assets.transport_plane,
         level,
         stats_repo["enemies"][EnemyKind.TransportPlane],
+        additional_components=[SpawnsEnemies(kind=EnemyKind.Elite, rate=1_000.0)],
     )
+
+
+spawning_map: dict[EnemyKind, Callable] = {
+    EnemyKind.Grunt: spawn_grunt,
+    EnemyKind.Tank: spawn_tank,
+    EnemyKind.Elite: spawn_elite,
+    EnemyKind.Commando: spawn_commando,
+    EnemyKind.FighterPlane: spawn_fighter_plane,
+    EnemyKind.TransportPlane: spawn_transport_plane,
+}
 
 
 def spawn_enemy(
@@ -169,7 +203,11 @@ def spawn_enemy(
     image: pygame.Surface,
     level: int,
     enemy_stats: EnemyStats,
+    *,
+    additional_components=None,
 ):
+    additional_components = additional_components or []
+
     max_health = enemy_stats["base_health"] + level * enemy_stats["health_per_level"]
 
     bounty = enemy_stats["base_bounty"] + level * enemy_stats["bounty_per_level"]
@@ -197,10 +235,43 @@ def spawn_enemy(
         ),
         Despawnable(),
         UnitPathing(vertices=spawn_path_graph.vertices),
+        *additional_components,
     )
 
 
-def kill_enemy(world: esper.World, enemy_ent: int):
+def process_on_death_behavior(
+    world: esper.World,
+    enemy_ent: int,
+    on_death_behavior: OnDeathBehavior,
+    assets: Assets,
+    stats_repo: StatsRepo,
+):
+    if on_death_behavior.kind == OnDeathBehaviorKind.SpawnUnits:
+        spawning = world.get_component(Spawning)[0][1]
+
+        for enemy_kind in on_death_behavior.enemies:
+            spawning_map[enemy_kind](
+                world,
+                enemy_ent,
+                level=spawning.current_wave_index,
+                assets=assets,
+                stats_repo=stats_repo,
+            )
+
+
+def kill_enemy(
+    world: esper.World,
+    enemy_ent: int,
+    *,
+    assets: Assets,
+    stats_repo: StatsRepo,
+):
+    # check for on delete behavior
+    if on_death_behavior := world.try_component(enemy_ent, OnDeathBehavior):
+        process_on_death_behavior(
+            world, enemy_ent, on_death_behavior, assets, stats_repo
+        )
+
     # remove enemy entity
     world.delete_entity(enemy_ent)
 
