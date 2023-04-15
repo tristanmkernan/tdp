@@ -88,13 +88,13 @@ def build_additional_components_for_enemy_kind(
     assets: Assets,
 ):
     if enemy_kind == EnemyKind.TransportPlane:
-        return [SpawnsEnemies(kind=EnemyKind.Elite, rate=1_000.0)]
+        return [SpawnsEnemies(kind=EnemyKind.Commando, rate=2_000.0)]
 
     if enemy_kind == EnemyKind.Tank:
         return [
             OnDeathBehavior(
                 kind=OnDeathBehaviorKind.SpawnUnits,
-                enemies=[EnemyKind.Commando, EnemyKind.Commando, EnemyKind.Commando],
+                enemies=[EnemyKind.Commando, EnemyKind.Elite, EnemyKind.Grunt],
             )
         ]
 
