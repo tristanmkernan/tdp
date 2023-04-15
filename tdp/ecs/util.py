@@ -4,7 +4,14 @@ from pygame.math import Vector2
 
 from tdp.ecs.gui import GuiElements
 
-from .components import BoundingBox, TurretBuildZone, Enemy, TurretMachine
+from .components import (
+    BoundingBox,
+    PathGraph,
+    TurretBuildZone,
+    Enemy,
+    TurretMachine,
+    UnitPathing,
+)
 from .types import PlayerAction
 from .enums import (
     PlayerActionKind,
@@ -129,3 +136,13 @@ def get_enemies_in_range(
             ents_in_range.append(enemy_ent)
 
     return ents_in_range
+
+
+def unit_pathing_to_path_graph(unit_pathing: UnitPathing) -> PathGraph:
+    """
+    for dynamic spawns, copy the remaining points on the path
+    """
+
+    return PathGraph(
+        vertices=[vert.copy() for vert in unit_pathing.vertices[unit_pathing.index :]]
+    )

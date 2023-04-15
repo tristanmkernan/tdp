@@ -27,6 +27,7 @@ from .components import (
     DamagesEnemy,
     Enemy,
     Lifetime,
+    PathGraph,
     PlayerInputMachine,
     PlayerResearch,
     PlayerResources,
@@ -58,7 +59,7 @@ from .entities import (
     kill_enemy,
     player_researching_idle,
     research_incomplete,
-    spawning_map,
+    spawn_enemy,
     start_research,
     sync_selected_turret_range_extra_renderable,
     track_score_event,
@@ -68,7 +69,6 @@ from .entities import (
 )
 from .enums import (
     DamagesEnemyOnCollisionBehavior,
-    EnemyKind,
     PlayerInputState,
     RenderableExtraKind,
     RenderableExtraOrder,
@@ -94,6 +94,7 @@ from .util import (
     get_player_action_for_button_press,
     get_player_action_for_click,
     get_closest_enemy,
+    unit_pathing_to_path_graph,
 )
 from . import esper
 
@@ -194,7 +195,9 @@ class SpawningProcessor(esper.Processor):
         **kwargs,
     ):
         # NOTE: only one spawn point at the moment
-        spawning_ent, spawning = self.world.get_component(Spawning)[0]
+        _, (spawning, bbox, path_graph) = self.world.get_components(
+            Spawning, BoundingBox, PathGraph
+        )[0]
 
         wave = spawning.current_wave
 
@@ -202,12 +205,14 @@ class SpawningProcessor(esper.Processor):
 
         match current_step:
             case {"kind": SpawningWaveStepKind.SpawnEnemy, "enemy_kind": enemy_kind}:
-                enemy = spawning_map[enemy_kind](
+                enemy = spawn_enemy(
                     self.world,
-                    spawning_ent,
-                    level=spawning.current_wave_index,
-                    assets=assets,
-                    stats_repo=stats_repo,
+                    bbox,
+                    path_graph,
+                    enemy_kind,
+                    spawning.current_wave_index,
+                    stats_repo,
+                    assets,
                 )
 
                 wave.enemy_spawn_count += 1
@@ -237,16 +242,20 @@ class SpawnsEnemiesProcessor(esper.Processor):
         # TODO could refactor current level
         spawning = self.world.get_component(Spawning)[0][1]
 
-        for ent, spawns_enemies in self.world.get_component(SpawnsEnemies):
+        for ent, (spawns_enemies, bbox, unit_pathing) in self.world.get_components(
+            SpawnsEnemies, BoundingBox, UnitPathing
+        ):
             spawns_enemies.elapsed += delta
 
             if spawns_enemies.due_to_spawn:
-                spawning_map[spawns_enemies.kind](
+                spawn_enemy(
                     self.world,
-                    ent,
-                    level=spawning.current_wave_index,
-                    assets=assets,
-                    stats_repo=stats_repo,
+                    bbox,
+                    unit_pathing_to_path_graph(unit_pathing),
+                    spawns_enemies.kind,
+                    spawning.current_wave_index,
+                    stats_repo,
+                    assets,
                 )
 
                 spawns_enemies.elapsed = 0.0
@@ -303,7 +312,7 @@ class OutOfBoundsProcessor(esper.Processor):
 # TODO refactor to EnemyCollisionProcessor
 # applying Damage is just another CollisionEffect
 class DamagesEnemyProcessor(esper.Processor):
-    def process(self, *args, assets: Assets, **kwargs):
+    def process(self, *args, assets: Assets, stats_repo: StatsRepo, **kwargs):
         for damaging_ent, (damages_enemy, damaging_bbox) in self.world.get_components(
             DamagesEnemy, BoundingBox
         ):
@@ -323,7 +332,9 @@ class DamagesEnemyProcessor(esper.Processor):
                     if enemy.is_dead:
                         track_score_event(self.world, ScoreEventKind.EnemyKill)
 
-                        kill_enemy(self.world, enemy_ent)
+                        kill_enemy(
+                            self.world, enemy_ent, assets=assets, stats_repo=stats_repo
+                        )
                     elif damages_enemy.applies_effects:
                         apply_damage_effects_to_enemy(
                             self.world, damaging_ent, enemy_ent, assets=assets
@@ -768,7 +779,9 @@ class FadeOutProcessor(esper.Processor):
 
 
 class BurningProcessor(esper.Processor):
-    def process(self, *args, delta: float, **kwargs):
+    def process(
+        self, *args, delta: float, assets: Assets, stats_repo: StatsRepo, **kwargs
+    ):
         for enemy_ent, (enemy, burning) in self.world.get_components(Enemy, Burning):
             burning.elapsed += delta
 
@@ -779,7 +792,9 @@ class BurningProcessor(esper.Processor):
                 if enemy.is_dead:
                     track_score_event(self.world, ScoreEventKind.EnemyKill)
 
-                    kill_enemy(self.world, enemy_ent)
+                    kill_enemy(
+                        self.world, enemy_ent, assets=assets, stats_repo=stats_repo
+                    )
 
                 burning.ticks += 1
 
@@ -788,7 +803,9 @@ class BurningProcessor(esper.Processor):
 
 
 class PoisonedProcessor(esper.Processor):
-    def process(self, *args, delta: float, **kwargs):
+    def process(
+        self, *args, delta: float, assets: Assets, stats_repo: StatsRepo, **kwargs
+    ):
         for enemy_ent, (enemy, poisoned) in self.world.get_components(Enemy, Poisoned):
             poisoned.elapsed += delta
 
@@ -799,7 +816,9 @@ class PoisonedProcessor(esper.Processor):
                 if enemy.is_dead:
                     track_score_event(self.world, ScoreEventKind.EnemyKill)
 
-                    kill_enemy(self.world, enemy_ent)
+                    kill_enemy(
+                        self.world, enemy_ent, assets=assets, stats_repo=stats_repo
+                    )
 
                 poisoned.ticks += 1
 
@@ -817,7 +836,9 @@ class ShockedProcessor(esper.Processor):
 
 
 class BuffetedProcessor(esper.Processor):
-    def process(self, *args, delta: float, **kwargs):
+    def process(
+        self, *args, delta: float, assets: Assets, stats_repo: StatsRepo, **kwargs
+    ):
         for enemy_ent, (enemy, buffeted, vel) in self.world.get_components(
             Enemy, Buffeted, Velocity
         ):
@@ -835,7 +856,12 @@ class BuffetedProcessor(esper.Processor):
                 if enemy.is_dead:
                     track_score_event(self.world, ScoreEventKind.EnemyKill)
 
-                    kill_enemy(self.world, enemy_ent)
+                    kill_enemy(
+                        self.world,
+                        enemy_ent,
+                        assets=assets,
+                        stats_repo=stats_repo,
+                    )
 
                 buffeted.ticks += 1
 

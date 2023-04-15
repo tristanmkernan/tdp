@@ -43,43 +43,43 @@
   <object id="1" name="PathStart" type="Path" x="928.407" y="125.46">
    <point/>
   </object>
-  <object id="2" type="Path" x="208.72" y="149.412">
+  <object id="2" type="Path" x="193.777" y="131.021">
    <properties>
     <property name="index" type="int" value="0"/>
    </properties>
    <point/>
   </object>
-  <object id="3" type="Path" x="206.439" y="299.964">
+  <object id="3" type="Path" x="186.899" y="330.998">
    <properties>
     <property name="index" type="int" value="1"/>
    </properties>
    <point/>
   </object>
-  <object id="4" type="Path" x="742.497" y="342.165">
+  <object id="4" type="Path" x="766.635" y="341.016">
    <properties>
     <property name="index" type="int" value="2"/>
    </properties>
    <point/>
   </object>
-  <object id="5" type="Path" x="740.216" y="496.139">
+  <object id="5" type="Path" x="771.25" y="497.288">
    <properties>
     <property name="index" type="int" value="3"/>
    </properties>
    <point/>
   </object>
-  <object id="6" type="Path" x="215.564" y="537.199">
+  <object id="6" type="Path" x="194.874" y="521.107">
    <properties>
     <property name="index" type="int" value="4"/>
    </properties>
    <point/>
   </object>
-  <object id="7" type="Path" x="212.142" y="678.627">
+  <object id="7" type="Path" x="197.199" y="701.616">
    <properties>
     <property name="index" type="int" value="5"/>
    </properties>
    <point/>
   </object>
-  <object id="8" type="Path" x="832.601" y="740.216">
+  <object id="8" type="Path" x="824.555" y="718.377">
    <properties>
     <property name="index" type="int" value="6"/>
    </properties>

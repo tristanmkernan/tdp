@@ -8,7 +8,7 @@ import pygame
 from pygame import Rect, Vector2
 from tdp.ecs.statsrepo import EnemyStats, StatsRepo
 
-from tdp.ecs.util import get_enemies_in_range
+from tdp.ecs.util import get_enemies_in_range, unit_pathing_to_path_graph
 
 
 from ..constants import (
@@ -78,142 +78,48 @@ def create_player(world: esper.World) -> int:
     )
 
 
-def spawn_tank(
+def build_additional_components_for_enemy_kind(
     world: esper.World,
-    spawn_point: int,
+    spawn_bbox: BoundingBox,
+    spawn_path_graph: PathGraph,
+    enemy_kind: EnemyKind,
     level: int,
-    *,
-    assets: Assets,
     stats_repo: StatsRepo,
+    assets: Assets,
 ):
-    return spawn_enemy(
-        world,
-        spawn_point,
-        assets.tank,
-        level,
-        stats_repo["enemies"][EnemyKind.Tank],
-        additional_components=[
+    if enemy_kind == EnemyKind.TransportPlane:
+        return [SpawnsEnemies(kind=EnemyKind.Elite, rate=1_000.0)]
+
+    if enemy_kind == EnemyKind.Tank:
+        return [
             OnDeathBehavior(
                 kind=OnDeathBehaviorKind.SpawnUnits,
                 enemies=[EnemyKind.Commando, EnemyKind.Commando, EnemyKind.Commando],
             )
-        ],
-    )
+        ]
 
-
-def spawn_grunt(
-    world: esper.World,
-    spawn_point: int,
-    level: int,
-    *,
-    assets: Assets,
-    stats_repo: StatsRepo,
-):
-    return spawn_enemy(
-        world,
-        spawn_point,
-        assets.grunt,
-        level,
-        stats_repo["enemies"][EnemyKind.Grunt],
-    )
-
-
-def spawn_elite(
-    world: esper.World,
-    spawn_point: int,
-    level: int,
-    *,
-    assets: Assets,
-    stats_repo: StatsRepo,
-):
-    return spawn_enemy(
-        world,
-        spawn_point,
-        assets.elite,
-        level,
-        stats_repo["enemies"][EnemyKind.Elite],
-    )
-
-
-def spawn_commando(
-    world: esper.World,
-    spawn_point: int,
-    level: int,
-    *,
-    assets: Assets,
-    stats_repo: StatsRepo,
-):
-    return spawn_enemy(
-        world,
-        spawn_point,
-        assets.commando,
-        level,
-        stats_repo["enemies"][EnemyKind.Commando],
-    )
-
-
-def spawn_fighter_plane(
-    world: esper.World,
-    spawn_point: int,
-    level: int,
-    *,
-    assets: Assets,
-    stats_repo: StatsRepo,
-):
-    return spawn_enemy(
-        world,
-        spawn_point,
-        assets.fighter_plane,
-        level,
-        stats_repo["enemies"][EnemyKind.FighterPlane],
-    )
-
-
-def spawn_transport_plane(
-    world: esper.World,
-    spawn_point: int,
-    level: int,
-    *,
-    assets: Assets,
-    stats_repo: StatsRepo,
-):
-    return spawn_enemy(
-        world,
-        spawn_point,
-        assets.transport_plane,
-        level,
-        stats_repo["enemies"][EnemyKind.TransportPlane],
-        additional_components=[SpawnsEnemies(kind=EnemyKind.Elite, rate=1_000.0)],
-    )
-
-
-spawning_map: dict[EnemyKind, Callable] = {
-    EnemyKind.Grunt: spawn_grunt,
-    EnemyKind.Tank: spawn_tank,
-    EnemyKind.Elite: spawn_elite,
-    EnemyKind.Commando: spawn_commando,
-    EnemyKind.FighterPlane: spawn_fighter_plane,
-    EnemyKind.TransportPlane: spawn_transport_plane,
-}
+    return []
 
 
 def spawn_enemy(
     world: esper.World,
-    spawn_point: int,
-    image: pygame.Surface,
+    spawn_bbox: BoundingBox,
+    spawn_path_graph: PathGraph,
+    enemy_kind: EnemyKind,
     level: int,
-    enemy_stats: EnemyStats,
-    *,
-    additional_components=None,
+    stats_repo: StatsRepo,
+    assets: Assets,
 ):
-    additional_components = additional_components or []
+    additional_components = build_additional_components_for_enemy_kind(
+        world, spawn_bbox, spawn_path_graph, enemy_kind, level, stats_repo, assets
+    )
+
+    enemy_stats = stats_repo["enemies"][enemy_kind]
+    image = assets.enemies[enemy_kind]
 
     max_health = enemy_stats["base_health"] + level * enemy_stats["health_per_level"]
 
     bounty = enemy_stats["base_bounty"] + level * enemy_stats["bounty_per_level"]
-
-    spawn_bbox = world.component_for_entity(spawn_point, BoundingBox)
-    spawn_path_graph = world.component_for_entity(spawn_point, PathGraph)
 
     image_rect = image.get_rect()
 
@@ -223,8 +129,8 @@ def spawn_enemy(
         Velocity(vec=Vector2(enemy_stats["speed"], 0)),
         BoundingBox(
             rect=Rect(
-                spawn_bbox.rect.x,
-                spawn_bbox.rect.y - image_rect.height / 2,
+                spawn_bbox.rect.centerx,
+                spawn_bbox.rect.centery - image_rect.height / 2,
                 image_rect.width,
                 image_rect.height,
             )
@@ -248,14 +154,18 @@ def process_on_death_behavior(
 ):
     if on_death_behavior.kind == OnDeathBehaviorKind.SpawnUnits:
         spawning = world.get_component(Spawning)[0][1]
+        bbox = world.component_for_entity(enemy_ent, BoundingBox)
+        unit_pathing = world.component_for_entity(enemy_ent, UnitPathing)
 
         for enemy_kind in on_death_behavior.enemies:
-            spawning_map[enemy_kind](
+            spawn_enemy(
                 world,
-                enemy_ent,
-                level=spawning.current_wave_index,
-                assets=assets,
-                stats_repo=stats_repo,
+                bbox,
+                unit_pathing_to_path_graph(unit_pathing),
+                enemy_kind,
+                spawning.current_wave_index,
+                stats_repo,
+                assets,
             )
 
 

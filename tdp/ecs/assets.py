@@ -3,17 +3,14 @@ import logging
 
 import pygame
 
+from .enums import EnemyKind
+
 logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
 class Assets:
-    grunt: pygame.Surface
-    elite: pygame.Surface
-    commando: pygame.Surface
-    tank: pygame.Surface
-    fighter_plane: pygame.Surface
-    transport_plane: pygame.Surface
+    enemies: dict[EnemyKind, pygame.Surface]
 
     turret_build_zone: pygame.Surface
 
@@ -44,12 +41,18 @@ class Assets:
 
 def load_assets() -> Assets:
     return Assets(
-        grunt=pygame.image.load("assets/enemies/grunt.png"),
-        elite=pygame.image.load("assets/enemies/elite.png"),
-        commando=pygame.image.load("assets/enemies/commando.png"),
-        tank=pygame.image.load("assets/enemies/tank.png"),
-        fighter_plane=pygame.image.load("assets/enemies/fighter-plane.png"),
-        transport_plane=pygame.image.load("assets/enemies/transport-plane.png"),
+        enemies={
+            EnemyKind.Grunt: pygame.image.load("assets/enemies/grunt.png"),
+            EnemyKind.Elite: pygame.image.load("assets/enemies/elite.png"),
+            EnemyKind.Commando: pygame.image.load("assets/enemies/commando.png"),
+            EnemyKind.Tank: pygame.image.load("assets/enemies/tank.png"),
+            EnemyKind.FighterPlane: pygame.image.load(
+                "assets/enemies/fighter-plane.png"
+            ),
+            EnemyKind.TransportPlane: pygame.image.load(
+                "assets/enemies/transport-plane.png"
+            ),
+        },
         turret_build_zone=pygame.image.load("assets/turrets/buildzone.png"),
         bullet_turret=pygame.image.load("assets/turrets/mach1.png"),
         bullet_turret__firing=pygame.image.load("assets/turrets/mach1--firing.png"),

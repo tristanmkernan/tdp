@@ -12,6 +12,17 @@
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
+        "bigger.tdp.tmx": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1.5,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 479,
+                "y": 218.66666666666666
+            }
+        },
         "map1.tmx": {
             "expandedObjectLayers": [
                 3
@@ -63,6 +74,17 @@
                 "x": 608.8450620050799,
                 "y": 415.3593306439564
             }
+        },
+        "winding.tdp.tmx": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 0.87,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 482.18390804597686,
+                "y": 473.56321839080454
+            }
         }
     },
     "last.imagePath": "/Users/tristan/prog/games/tdp/assets/maps",
@@ -79,6 +101,7 @@
     "project": "map1.tiled-project",
     "property.type": "int",
     "recentFiles": [
+        "winding.tdp.tmx",
         "Kenney.tsx",
         "map1.tmx"
     ],

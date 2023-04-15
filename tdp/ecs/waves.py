@@ -55,10 +55,18 @@ def generate_random_waves(count=99) -> list[SpawningWave]:
             default_wait = "M"
             enemies = ["C"]
             weights = [1]
+        elif wave_no < wave_type_length * 6:
+            default_wait = "M"
+            enemies = ["C", "T"]
+            weights = [3, 1]
+        elif wave_no < wave_type_length * 7:
+            default_wait = "M"
+            enemies = ["C", "T", "P"]
+            weights = [5, 3, 2]
         else:
             default_wait = "S"
-            enemies = ["C"]
-            weights = [1]
+            enemies = ["T", "P"]
+            weights = [2, 1]
 
         enemies = random.choices(enemies, weights=weights, k=enemies_count)
 
